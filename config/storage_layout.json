@@ -1,0 +1,15 @@
+{
+  "layout_version": 1,
+  "roots": {
+    "manager_root": "${APP_ROOT}",
+    "hub_data_root": "S:/Audion/Hub Data",
+    "docs_root": "S:/Audion/Docs",
+    "full_projects_root": "S:/TOOLS"
+  },
+  "roles": {
+    "manager_root": "Independent portable app/codebase",
+    "hub_data_root": "Git-backed technical projections and mirrors",
+    "docs_root": "Neutral Markdown/text docs folder, optionally opened by VS Code, a file manager, a Markdown app or sync tool",
+    "full_projects_root": "Live runnable projects; source of truth"
+  }
+}

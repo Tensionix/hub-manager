@@ -1,0 +1,20 @@
+{
+  "history": [
+    "\"S:\\TOOLS\\Audion Hub Manager\\Audion Hub Manager\\runtime\\python.exe\" -c \"print(chr(27)+'[31mRED'+chr(27)+'[0m OK')\"",
+    ".\\runtime\\python.exe -c \"print(chr(27)+'[31mRED'+chr(27)+'[0m OK')\""
+  ],
+  "pinned": [
+    {
+      "title": "Git status",
+      "command": "git status --porcelain=v1 -b"
+    },
+    {
+      "title": "Git remotes",
+      "command": "git remote -v"
+    },
+    {
+      "title": "Git log compact",
+      "command": "git log --oneline --decorate -20"
+    }
+  ]
+}

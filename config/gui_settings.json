@@ -1,0 +1,12 @@
+{
+  "gui": {
+    "language": "ru",
+    "theme": "code_dark",
+    "host": "127.0.0.1",
+    "port": 8080,
+    "native": false,
+    "reload": false,
+    "open_browser": false,
+    "emoji": false
+  }
+}

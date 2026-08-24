@@ -1,0 +1,22 @@
+{
+  "apps": {
+    "vscode": {
+      "command": "",
+      "args": [
+        "-g",
+        "{path}"
+      ]
+    },
+    "vscode_folder": {
+      "command": "",
+      "args": [
+        "{path}"
+      ]
+    },
+    "explorer": {
+      "windows": "explorer",
+      "linux": "xdg-open",
+      "darwin": "open"
+    }
+  }
+}

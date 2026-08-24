@@ -1,0 +1,17 @@
+{
+  "active_project_id": "demo_local",
+  "projects": [
+    {
+      "id": "demo_local",
+      "title": "Demo — Local Projection Smoke Test",
+      "source_path": "examples/demo_full_project",
+      "projection_path": "examples/demo_hub_projection/Demo_Full_Project",
+      "profile": "audion_python_project_projection",
+      "default_branch": "main",
+      "docs_app_name": "",
+      "docs_file": "projects/Demo_Full_Project/README.md",
+      "vscode_workspace": "",
+      "notes": "Works out of the box inside this skeleton archive."
+    }
+  ]
+}

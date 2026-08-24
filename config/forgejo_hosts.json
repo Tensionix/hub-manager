@@ -1,0 +1,20 @@
+{
+  "active_host_id": "audion",
+  "policy": "personal_access_token",
+  "notes": [
+    "No tokens are stored here. Tokens live in the OS credential store through `git credential`.",
+    "Create a token in Forgejo: Settings -> Applications -> Generate New Token."
+  ],
+  "hosts": [
+    {
+      "id": "audion",
+      "title": "Audion Forgejo",
+      "url": "https://git.audion.dev",
+      "ssh_user": "git",
+      "ssh_port": 22,
+      "preferred_url_type": "https",
+      "login": "audion",
+      "enabled": true
+    }
+  ]
+}

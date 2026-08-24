@@ -1,0 +1,23 @@
+{
+  "active_host_id": "example",
+  "policy": "personal_access_token",
+  "notes": [
+    "This file never stores tokens. Create a token in your Forgejo/Gitea instance: Settings -> Applications -> Generate New Token.",
+    "Audion Hub Manager hands the token to the Git credential helper you already use (Git Credential Manager, wincred, libsecret, osxkeychain).",
+    "Scopes follow the route, not the object (verified on a live Forgejo 15): read:user for identity and the repository list, write:user to CREATE a repository because that route lives under /api/v1/user/*, and read/write:repository for git clone/push over HTTPS, which is judged separately from the API.",
+    "preferred_url_type selects how remote URLs are built: ssh uses your SSH key, https uses the stored token.",
+    "Set ssh_port when the instance exposes SSH on a non-standard port; the URL then becomes ssh://git@host:PORT/owner/repo.git."
+  ],
+  "hosts": [
+    {
+      "id": "example",
+      "title": "Example Forgejo",
+      "url": "https://git.example.org",
+      "ssh_user": "git",
+      "ssh_port": 22,
+      "preferred_url_type": "ssh",
+      "login": "",
+      "enabled": true
+    }
+  ]
+}

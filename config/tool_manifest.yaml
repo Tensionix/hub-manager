@@ -1,0 +1,120 @@
+tool:
+  id: audion_hub_manager
+  name: "Audion Hub Manager"
+  category: "Markdown/Git/Hub"
+  version: "0.1.0-skeleton"
+
+paths:
+  input: "input"
+  output: "output"
+  logs: "logs"
+  report: "report"
+  workspace: "workspace"
+  config: "config"
+  release: "release"
+
+ui:
+  title: "Audion Hub Manager"
+  host: "127.0.0.1"
+  port: 8080
+  native: false
+  reload: false
+  open_browser: false
+
+operation_groups:
+  - id: mirror
+    title: "MIRROR"
+    title_ru: "MIRROR"
+    description: "Preview and apply Full Project to Hub Projection."
+    description_ru: "Предпросмотр и применение Full Project -> Hub Projection."
+    children:
+      - id: mirror_preview
+        title: "Preview MIRROR"
+        title_ru: "Preview MIRROR"
+        description: "Build a projection plan without filesystem writes."
+        description_ru: "Построить план проекции без записи на диск."
+        kind: "safe"
+        fields:
+          - id: project_id
+            type: "select"
+            group: "source"
+            label: "Project"
+            label_ru: "Проект"
+            default: "demo_local"
+          - id: compare_mode
+            type: "radio"
+            group: "options"
+            label: "Compare mode"
+            label_ru: "Режим сравнения"
+            default: "strict_blake3"
+            options:
+              - value: "quick"
+                label: "quick"
+                label_ru: "quick"
+              - value: "safe_blake3"
+                label: "safe_blake3"
+                label_ru: "safe_blake3"
+              - value: "strict_blake3"
+                label: "strict_blake3"
+                label_ru: "strict_blake3"
+      - id: mirror_apply
+        title: "Apply MIRROR"
+        title_ru: "Apply MIRROR"
+        description: "Apply a projection plan; real writes require explicit apply semantics."
+        description_ru: "Применить план проекции; реальная запись требует явного apply."
+        kind: "dangerous"
+        fields:
+          - id: dry_run
+            type: "checkbox"
+            group: "run"
+            label: "Dry-run"
+            label_ru: "Dry-run"
+            default: true
+
+  - id: git
+    title: "Git"
+    title_ru: "Git"
+    description: "Transparent Git status, diff, stage and commit workflows."
+    description_ru: "Прозрачные Git status, diff, stage и commit-сценарии."
+    children:
+      - id: git_status
+        title: "Git status"
+        title_ru: "Git status"
+        description: "Read porcelain status from the Hub Projection."
+        description_ru: "Прочитать porcelain status из Hub Projection."
+        kind: "safe"
+      - id: commit_builder
+        title: "Commit builder"
+        title_ru: "Commit builder"
+        description: "Prepare a conventional Hub commit message."
+        description_ru: "Подготовить conventional commit-сообщение для Hub."
+        kind: "safe"
+        fields:
+          - id: commit_type
+            type: "select"
+            group: "message"
+            label: "Type"
+            label_ru: "Тип"
+            default: "docs"
+            options:
+              - value: "docs"
+                label: "docs"
+                label_ru: "docs"
+              - value: "code"
+                label: "code"
+                label_ru: "code"
+              - value: "audit"
+                label: "audit"
+                label_ru: "audit"
+          - id: commit_scope
+            type: "text"
+            group: "message"
+            label: "Scope"
+            label_ru: "Scope"
+            default: "hub"
+          - id: commit_subject
+            type: "text"
+            group: "message"
+            label: "Subject"
+            label_ru: "Тема"
+            default: "update projection checkpoint"

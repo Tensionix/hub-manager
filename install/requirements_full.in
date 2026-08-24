@@ -1,0 +1,20 @@
+# Audion Hub Manager core
+blake3
+pytest
+
+# GUI layer
+nicegui
+pywebview
+pyyaml
+rich
+tqdm
+
+# Build bootstrap
+setuptools
+wheel
+packaging
+
+# Test and audit layer
+# NiceGUI's headless `user` fixture parses the rendered page with BeautifulSoup;
+# the Screen fixture would need selenium and is deliberately not used.
+beautifulsoup4

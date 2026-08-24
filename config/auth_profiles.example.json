@@ -1,0 +1,37 @@
+{
+  "active_profile": "external_ssh_default",
+  "profiles": [
+    {
+      "id": "external_ssh_default",
+      "title": "External SSH / ssh-agent",
+      "strategy": "ssh_agent",
+      "preferred_remote_url_type": "ssh",
+      "store_credentials_in_project": false,
+      "background_checks_non_interactive": true,
+      "ssh_hosts": [
+        "github.com",
+        "gitlab.com",
+        "codeberg.org"
+      ],
+      "notes": "Recommended. Uses SSH keys configured outside Audion Hub Manager."
+    },
+    {
+      "id": "https_gcm",
+      "title": "HTTPS via Git Credential Manager",
+      "strategy": "git_credential_manager",
+      "preferred_remote_url_type": "https",
+      "store_credentials_in_project": false,
+      "background_checks_non_interactive": true,
+      "notes": "Useful behind restrictive networks. Credentials are handled by GCM/OS, not by this app."
+    },
+    {
+      "id": "external_gui",
+      "title": "External GUI auth / VS Code / GitKraken",
+      "strategy": "external_tools",
+      "preferred_remote_url_type": "any",
+      "store_credentials_in_project": false,
+      "background_checks_non_interactive": true,
+      "notes": "Hub Manager only detects and uses already-working Git auth."
+    }
+  ]
+}
