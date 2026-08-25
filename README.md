@@ -8,7 +8,7 @@
 - [Direct download](https://audion.dev/get/hub-manager/1.10.0/Audion_Hub_Manager_v1.10.0_Full.zip) — unmetered, no rate limits
 - [Project page](https://audion.dev/downloads/hub-manager) — every version and how to install
 
-![The program window](docs/screenshot.png)
+<img src="docs/screenshot.png" alt="The program window" width="560">
 
 `SHA-256: a1791003c9d7b46b188e72ad601ab98c9b63afa422c7243c002aa0289e82ebcf`
 
