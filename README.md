@@ -8,14 +8,14 @@
   <a href="https://github.com/Tensionix/hub-manager/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/Tensionix/hub-manager?style=flat-square&color=5fd08a&logo=apache&logoColor=white&cacheSeconds=3600"></a>
 </p>
 
-**Version 1.10.0** · 2026-08-25 · 181.4 MB
+**Version 1.10.1** · 2026-09-01 · 183.2 MB
 
-- [Direct download](https://audion.dev/get/hub-manager/1.10.0/Audion_Hub_Manager_v1.10.0_Full.zip) — unmetered, no rate limits
+- [Direct download](https://dl.audion.dev/hub-manager/1.10.1/Audion_Hub_Manager_v1.10.1_Full.zip) — unmetered, no rate limits
 - [Project page](https://audion.dev/downloads/hub-manager) — every version and how to install
 
 <p align="center"><img src="docs/screenshot.png" alt="The program window" width="560"></p>
 
-`SHA-256: a1791003c9d7b46b188e72ad601ab98c9b63afa422c7243c002aa0289e82ebcf`
+`SHA-256: 0ceceb874b9ee981d1c3d0060ee129d5544d987dfc1ed2a95e99af7460ee520c`
 
 ---
 
