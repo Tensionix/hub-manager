@@ -8,545 +8,218 @@
   <a href="https://github.com/Tensionix/hub-manager/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/Tensionix/hub-manager?style=flat-square&color=5fd08a&logo=apache&logoColor=white&cacheSeconds=3600"></a>
 </p>
 
-**Version 1.10.1** · 2026-09-01 · 5.9 MB
+**Version 1.10.1** · 2026-09-02 · 183.2 MB
 
-- [Direct download](https://dl.audion.dev/hub-manager/1.10.1/Audion_Hub_Manager_v1.10.1.zip) — unmetered, no rate limits
+- [Direct download](https://audion.dev/get/hub-manager/1.10.1/Audion_Hub_Manager_v1.10.1_Full.zip) — unmetered, no rate limits
 - [Project page](https://audion.dev/downloads/hub-manager) — every version and how to install
 
 <p align="center"><img src="docs/screenshot.png" alt="The program window" width="560"></p>
 
-`SHA-256: 6636fa1943a45d198b2dcba3937cb59a062f6a6feced8b7dce266cb2288f623b`
+`SHA-256: 0ceceb874b9ee981d1c3d0060ee129d5544d987dfc1ed2a95e99af7460ee520c`
 
 ---
 
 An **Audion** tool, published by [Tensionix](https://github.com/Tensionix).
 <!-- /audion:release -->
 
-**Audion Hub Manager** is a local portable/NiceGUI workbench for project
 
-projection, Markdown documentation, Git, VS Code and safe mirroring.
+[Русский](README_RU.md) · [User Guide](USER_GUIDE_EN.md) · [Decisions](DECISIONS_EN.md) · [History](CHANGELOG_EN.md)
 
+A portable workshop for projects: see what a project contains, keep its history
+in Git, and maintain a clean mirror — without dragging runtimes, caches, logs,
+and local keys along with it.
 
+## Why It Exists
 
-Core model:
+A working project has two incompatible properties. It must be complete — with
+every temporary file, build leftover, and machine-specific setting, or you
+cannot work in it. And it must be surveyable — so its history can be read, its
+changes compared, and a copy restored without first working out which files are
+source and which are yesterday's build residue.
 
-
-
-```text
-
-Source = full project and source of truth
-
-Hub Data = filtered technical mirror with Git
-
-Docs = optional human-readable documentation layer
-
-```
-
-
-
-The tool makes large projects visible, reviewable, committable and recoverable
-
-without copying runtime noise, caches, logs, build artifacts or local secrets.
-
-
-
-## Project Selection Model
-
-
-
-The `Project` dropdown selects an entry from `config/projects.json`. It is not
-
-a tree filter and it is not a folder picker inside the currently visible tree.
-
-It switches the whole active project bundle:
-
-
-
-```text
-
-source_path     -> Project/Source layer
-
-projection_path -> Hub Data / Mirror layer
-
-docs_path       -> Docs layer
-
-profile         -> MIRROR rules and commit allowlist
-
-default_branch  -> branch used by Git commands
+Those don't fit in one folder. So a project lives in three layers:
 
 ```
-
-
-
-Relative paths in `projects.json` are resolved from the Hub Manager root. This
-
-lets a portable bundle use `"source_path": "."` for itself and short relative
-
-paths for projects inside the same moved tree. When a selected path is outside
-
-the manager tree, Hub Manager keeps the absolute path.
-
-
-
-The `Structure` panel has three layer switches for the selected project. The
-
-badge near the title shows the active layer and its path:
-
-
-
-```text
-
-Project = live source_path of the selected project
-
-Mirror  = filtered Hub Data mirror for that project
-
-Docs    = readable Markdown/text folder for that project
-
+Source     the complete project, the single source of truth
+Mirror     a filtered technical copy with its own Git
+Docs       the human-readable layer: notes, descriptions, indexes
 ```
 
+The mirror can be deleted and rebuilt. The docs can be synced by anything — an
+editor, a file manager, Obsidian, a cloud drive, or nothing at all. The source is
+never modified.
 
+The project in one line:
 
-If one parent folder contains many projects, such as `S:/TOOLS/Apps/`, do not
+> Source stays whole. The mirror stays surveyable. The docs stay readable. Git
+> stops being scary.
 
-turn that parent into one project. Use `Rebuild dropdown` / `Scan projects`:
+## Principles
 
-Hub Manager detects real
+**The source is the truth, and the mirror never writes to it.** Not ever, under
+any setting. The mirror may delete and rebuild its own files, but on the source
+side it can only read.
 
-nested project roots, including double folders such as `Project/Project`, and
+**A real write requires explicit intent.** By default the mirror shows what it
+intends to do and stops there. Making it actually write takes a separate word.
 
-adds separate entries to `projects.json`. After that, switch projects one by
+**A filter cannot silently become a full copy.** If a profile demands masks and
+none are set, planning fails with an explanation rather than assembling a
+complete duplicate of the project. Otherwise one day the "filtered mirror" turns
+out to be a full clone, and you find out from a disk that ran out.
 
-one in the dropdown and run MIRROR/commit for the active entry.
+**A copy error forbids deletion.** Unconditionally, regardless of settings. This
+is precisely the case where a mirror can drop files that exist nowhere else.
 
+**This is not a secret store.** Tokens, passwords, and keys live where they
+belong: in the credential manager, in ssh-agent, in external sign-in tools. The
+program runs ordinary `git` commands and shows their output in full — if you are
+already signed in elsewhere, everything works without it knowing anything.
 
+**The mirror's history follows the same list as the mirror itself.** No
+`git add .`: only what the profile would let through goes into a commit.
 
-If the registry contains stale demo/sample records, missing `source_path`
+## What It Looks Like in Use
 
-values or duplicates, use `Support -> Clean projects.json`. It cleans only
+The project list at the top switches the whole set at once: source, mirror, docs
+folder, filtering profile, and default branch. One motion, not a hunt through a
+tree.
 
-`config/projects.json`; it does not delete Source, Hub Data, Docs or project
+Have a shared folder with twenty projects? It need not become one project: a scan
+finds the real roots inside — including nested `Project/Project` shapes — and
+registers each separately.
 
-folders.
+Three layer buttons show what you are currently looking at: the live project, the
+mirror, or the docs. A badge beside the heading names the active layer and its
+path, so the two are never confused.
 
+The right half of the window is tabs by kind of work: frequent commands,
+branches, editor, comparison, storage, remotes, commit basket, reading, history,
+and details.
 
+## What It Can Do
 
-## Documentation
+**Project registry** — maintain the list, scan a shared folder, clean out records
+with vanished paths and duplicates, show the state of every project at once: how
+many clean, how many with changes, where the errors are.
 
+**Mirror** — preview and apply by profile, verify source against mirror by
+checksums, restore a project from the mirror when the source is gone.
 
+**Git** — nearly the whole daily cycle: initialise, inspect state, compare, stage
+and commit, tags, branches and switching, stashes, history and graph, recovery,
+maintenance, syncing with remotes. Rare and dangerous operations remain explicit
+templates you must deliberately run.
 
-- `docs/README_RU.md` / `docs/README_EN.md` — project overview.
+**Remotes** — assemble the address with buttons (GitHub, GitLab, Forgejo, Gitea,
+your own server), push and pull, work with several remotes at once, check sign-in
+without storing tokens.
 
-- `docs/USER_GUIDE_RU.md` / `docs/USER_GUIDE_EN.md` — user workflow.
+**Editor** — read and edit Markdown and text in the window, with one-press
+handover to VS Code.
 
-- `docs/TECH_SPEC_RU.md` / `docs/TECH_SPEC_EN.md` — technical specification.
+## Next
 
-- `docs/GIT_WIKI_HUB_MANAGER_RU.md` / `docs/GIT_WIKI_HUB_MANAGER_EN.md` — detailed Git-work wiki.
+* [User Guide](USER_GUIDE_EN.md) — step by step: projects, mirror, Git, sign-in.
+* [Decisions](DECISIONS_EN.md) — why three layers, why the mirror works this way,
+  and why the program holds no passwords.
+* [History](CHANGELOG_EN.md) — what changed from version to version.
+* [Git wiki](GIT_WIKI_HUB_MANAGER_EN.md) — a detailed walk through Git work.
 
-- `AGENTS_RU.md` / `AGENTS_EN.md` — Codex/agent contract.
+---
 
-- `Docs/` — user and strategic documentation.
+## Technical Reference
 
-- PDF copies are generated only on explicit request and are not stored as a normal docs mirror.
-
-
-
-Markdown is the primary format. PDF output is an explicit one-off export, not a tracked duplicate documentation tree.
-
-
-
-## Features
-
-
-
-- Load project registry from `config/projects.json`.
-
-- Scan a parent folder with many projects and add detected projects to the registry.
-
-- Show a `SOURCE` badge for all registered projects after `Batch Git status`:
-
-  `projects / clean / dirty / errors`.
-
-- Run `SOURCE ACTIONS` for the registry: rebuild dropdown, batch preview
-
-  MIRROR, Clone Source, batch safety, batch verify, batch Git status and
-
-  combined workspace.
-
-- Run `PROJECT ACTIONS` for the selected tree object: refresh, load to Editor,
-
-  open in VS Code, copy relative/full path.
-
-- Open the current project through `Open Project`, plus Mirror, Docs Folder,
-
-  VS Code, Terminal and Git. `Terminal` opens a Source terminal; `Git` opens a
-
-  Git-root terminal and immediately runs `git status --short`.
-
-- Clean missing Source paths and duplicate records from `projects.json` through
-
-  `Support -> Clean projects.json`.
-
-- Build Hub Projection using `config/projection_profiles.json`.
-
-- Run dry-run and apply MIRROR with Source protection.
-
-- Show Project/GIT COPY/Docs tree layers in the `Structure` panel.
-
-- Run transparent Git commands and display exact terminal output.
-
-- Cover almost the full everyday Git lifecycle: init/status/inspect, diff,
-
-  stage/restore, commit, tag, remote sync, branch/switch, stash, history/graph,
-
-  recovery, maintenance, clone into Source and the manual command cache. Rare
-
-  or dangerous operations remain explicit templates.
-
-- Keep the main local Git commands in `Quick -> GIT LOCAL`: `init`,
-
-  `status`, `root`, `log --oneline` and `reflog`. `user config` lives in the
-
-  Auth block inside `Remote`, `config list` lives in Git backup/maintenance,
-
-  and graph history lives in the `History` pane.
-
-- Use `Branch` for branch status, `branch -vv`, `switch`, `switch -c`, tags,
-
-  compare branches, `merge --no-ff`, `revert`, `cherry-pick`, stash and
-
-  abort/rebase templates.
-
-- Prepare readable commit/checkpoints through Basket.
-
-- Open Markdown/text files in the embedded Editor with icon-only toolbar:
-
-  load/save/paste/copy/clear/VS Code/expand.
-
-- Show the two-row right tab grid: Quick, Branch, Editor, Diff, Storage;
-
-  Remote, Basket, Reader, History and Details. Safety Scan lives in Storage.
-
-- Use Material icons in the right tab headers and delayed tooltips on command
-
-  buttons and tabs.
-
-- Use `Remote` for remote URL construction, recent field caches,
-
-  `push origin`, `pull --ff-only`, `fetch --all --prune`, `remote -v`,
-
-  `push all remotes`, `apply remotes.json`, `origin push URLs` and Auth setup.
-
-- Check the BLAKE3 backend and run read-only Verify Mirror for Source <-> Hub Data.
-
-- Probe external Git authentication without storing tokens.
-
-- Help recover a project from Hub Data if Source was deleted.
-
-
-
-## Start
-
-
-
-GUI:
-
-
+### Running
 
 ```cmd
-
 launcher_gui.cmd
-
 ```
 
-
-
-CLI smoke:
-
-
+Checking it works without the window:
 
 ```cmd
-
 launcher_cli.cmd --mirror-preview demo_local --json
-
 launcher_cli.cmd --mirror-apply demo_local --json
-
 launcher_cli.cmd --mirror-apply demo_local --apply --json
-
 ```
-
-
 
 If the portable runtime is missing:
 
-
-
 ```cmd
-
 install\Build_Portable_Env.cmd
-
 ```
 
+### Describing a Project
 
-
-## Project Setup
-
-
-
-Projects are defined in:
-
-
-
-```text
-
-config/projects.json
-
-```
-
-
-
-Example:
-
-
+`config/projects.json`:
 
 ```json
-
 {
-
   "id": "audion_hub_manager",
-
   "title": "Audion Hub Manager",
-
   "source_path": ".",
-
   "projection_path": "S:/Audion/Hub Data/Audion Hub Manager",
-
   "docs_path": "S:/Audion/Docs/Projects/Audion Hub Manager",
-
   "profile": "audion_python_project_projection",
-
   "default_branch": "main"
-
 }
-
 ```
 
+| field | meaning |
+|---|---|
+| `source_path` | the live project; a relative path is resolved from the program root |
+| `projection_path` | the mirror; may carry its own `.git` and be rebuilt |
+| `docs_path` | optional docs layer for reading |
+| `profile` | filtering rules from `config/projection_profiles.json` |
+| `default_branch` | the branch Git commands work against |
 
+A corrupt registry file no longer blocks startup: the program falls back to
+defaults, keeps the surviving records, and reports the problem in the output
+dock.
 
-`source_path` is the live full project. Relative values are resolved from the
-
-Hub Manager root. MIRROR must not write there.
-
-
-
-`projection_path` is the filtered Hub Data mirror. It can be rebuilt and can
-
-have its own `.git`.
-
-
-
-`docs_path` is an optional docs-view for Markdown/text reading.
-
-
-
-## Safety Rules
-
-
-
-1. Source is the source of truth.
-
-2. Hub Data is derived and rebuildable.
-
-3. MIRROR does not modify Source.
-
-4. `.git/**` is protected.
-
-5. Real MIRROR apply requires explicit intent.
-
-6. Hub Manager commits must use the same allowlist as the active Hub profile.
-
-7. Do not store tokens, passwords, private keys or local paths in shared config.
-
-8. Keep machine-local settings in excluded files such as `*.local.json` or
-
-   `.env`.
-
-9. BLAKE3 manifests/check reports are written only to `logs/<project_id>/`.
-
-10. Docs/Obsidian/LogSeq/VS Code docs folders are not hashed separately: their
-
-    canonical technical copy already lives in Hub Data.
-
-
-
-`Verify Mirror` is a read-only Source ↔ Hub Data check for the active profile.
-
-It builds manifests in memory and writes one timestamped JSON result to
-
-`logs/<project_id>/`. It does not create manifest files inside Source, Hub Data
-
-or Docs.
-
-
-
-## Git
-
-
-
-Recommended model:
-
-
-
-```text
-
-Full Project Source/
-
-  .git/
-
-
-
-Hub Data/<project>/
-
-  .git/
+### Where Things Live
 
 ```
+config/projects.json              project registry
+config/projection_profiles.json   filtering profiles
+config/forgejo_hosts.json         known Forgejo and Gitea servers, no tokens
+logs/<project_id>/                verification reports, dated JSON
+```
 
+Checksum manifests are built in memory; neither source, mirror, nor docs receive
+service files.
 
-
-Source Git supports live development, VS Code and agents.
-
-
-
-Hub Git is a clean history for the filtered technical mirror.
-
-
-
-Hub Manager should not run broad `git add .`. It should stage/commit only files
-
-accepted by the active projection profile.
-
-
-
-## Remote And Auth
-
-
-
-Hub Manager is not a secrets vault.
-
-
-
-Remote names, repository owners/groups and repository names can be entered in
-
-the `Remote` pane. The recent-value selects cache up to 20 values per field and
-
-apply a value only after explicit selection, so typed or pasted input is not
-
-overlaid by cache text.
-
-
-
-Use external tools:
-
-
+### Verification
 
 ```cmd
-
-gh auth login
-
-glab auth login
-
-ssh -T git@github.com
-
-ssh -T git@gitlab.com
-
-```
-
-
-
-HTTPS credentials belong in Git Credential Manager or the OS credential store.
-
-SSH keys belong to SSH/ssh-agent.
-
-
-
-Platform and URL type are chosen with buttons in the top row of `Remote`, not
-
-with dropdowns. `Forgejo`, `Gitea` and `Custom host` additionally show server
-
-address and SSH port fields; known instances live in
-
-`config/forgejo_hosts.json`, which holds no tokens.
-
-
-
-A Forgejo/Gitea account is connected the ordinary way for those servers: a
-
-personal access token from `Settings -> Applications`. Hub Manager verifies the
-
-token against `/api/v1/user` and hands it to your Git credential helper; it is
-
-never written into the project files. From then on `git push` reads the token
-
-from the store by itself, while the API buttons show the account, list
-
-repositories and can create a new one. Rationale and details are in
-
-`docs/GIT_AUTH_STRATEGY.md`.
-
-
-
-## Checks
-
-
-
-```cmd
-
 python -m compileall -q system_core
-
 python -m pytest -q tests
-
 python system_core\ui_nicegui\app.py --smoke
-
 ```
-
-
 
 Documented baseline: `121 passed`.
 
-
-
-## Recovery
-
-
-
-If Source is deleted but Hub Data survived:
-
-
+### Restoring From the Mirror
 
 ```cmd
-
-robocopy "<Hub Data>\Audion Hub Manager" "<portable-root>\Audion Hub Manager" /E /COPY:DAT /DCOPY:DAT /R:1 /W:1 /XJ
-
+robocopy "<mirror>\Audion Hub Manager" "<root>\Audion Hub Manager" ^
+  /E /COPY:DAT /DCOPY:DAT /R:1 /W:1 /XJ
 ```
 
+Then rebuild the runtime or release artefacts if you need them.
 
+### Rules That Cannot Be Broken
 
-Then rebuild runtime or release artifacts if needed. Generate PDF only for an explicit handoff/archive request.
-
-
-
-Project formula:
-
-
-
-```text
-
-Source stays whole.
-
-Hub stays reviewable.
-
-Docs stays readable.
-
-Git stops being scary.
-
-```
-
+1. The source is the truth.
+2. The mirror is derived: it can be deleted and rebuilt.
+3. The mirror does not modify the source.
+4. `.git/**` is protected from scanning, deletion, and maintenance.
+5. A real write requires explicit intent.
+6. Commits follow the same list as the mirror.
+7. Tokens, passwords, private keys, and local paths never reach shared config.
+8. Machine-specific settings live in `*.local.json`, `.env`, and other excluded
+   files.
+9. Verification reports are written only to `logs/<project_id>/`.
+10. The docs layer is not hashed separately: its technical copy is already in the
+    mirror.
