@@ -1,5 +1,32 @@
 # GIT_WIKI_HUB_MANAGER - карта Audion Hub Manager
 
+**Содержание**
+
+- [1. Главная модель](#1-главная-модель)
+- [2. Локальная база и основные конфиги](#2-локальная-база-и-основные-конфиги)
+- [3. Реестр проектов](#3-реестр-проектов)
+- [4. Профили MIRROR](#4-профили-mirror)
+- [5. Общая раскладка окна](#5-общая-раскладка-окна)
+- [6. Header](#6-header)
+- [7. Левая панель Control](#7-левая-панель-control)
+- [8. Structure tree](#8-structure-tree)
+- [9. Inspector: Quick](#9-inspector-quick)
+- [10. Inspector: Basket](#10-inspector-basket)
+- [11. Inspector: Branch](#11-inspector-branch)
+- [12. Inspector: Remote](#12-inspector-remote)
+- [13. Inspector: Editor](#13-inspector-editor)
+- [14. Inspector: Reader](#14-inspector-reader)
+- [15. Inspector: Diff](#15-inspector-diff)
+- [16. Inspector: History](#16-inspector-history)
+- [17. Inspector: Details](#17-inspector-details)
+- [18. Inspector: Storage и Safety](#18-inspector-storage-и-safety)
+- [19. Terminal / command dock](#19-terminal--command-dock)
+- [20. GitHub/GitLab remote workflow](#20-githubgitlab-remote-workflow)
+- [21. MIRROR и обслуживание конфигов](#21-mirror-и-обслуживание-конфигов)
+- [22. Подробная карта Git-work функций](#22-подробная-карта-git-work-функций)
+- [23. Провисающие места и пропущенные частые команды](#23-провисающие-места-и-пропущенные-частые-команды)
+- [24. Рекомендуемый следующий backlog](#24-рекомендуемый-следующий-backlog)
+
 Статус: 2026-06-03.
 
 Этот документ - рабочая wiki-карта Audion Hub Manager. Здесь описаны окна,

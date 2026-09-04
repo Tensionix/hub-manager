@@ -1,5 +1,21 @@
 # TECH SPEC RU — Audion Hub Manager
 
+**Содержание**
+
+- [1. Назначение](#1-назначение)
+- [2. Архитектурный принцип](#2-архитектурный-принцип)
+- [2.1. Реестр проектов](#21-реестр-проектов)
+- [3. MIRROR Engine](#3-mirror-engine)
+- [4. Projection Profiles](#4-projection-profiles)
+- [5. UI Layout](#5-ui-layout)
+- [6. Core Панели](#6-core-панели)
+- [7. Terminal Dock](#7-terminal-dock)
+- [8. Git Engine](#8-git-engine)
+- [9. Auth Policy](#9-auth-policy)
+- [10. Storage Policy](#10-storage-policy)
+- [11. Testing](#11-testing)
+- [12. Documentation Artifacts](#12-documentation-artifacts)
+
 ## 1. Назначение
 
 Audion Hub Manager — локальный commander-интерфейс для связки:

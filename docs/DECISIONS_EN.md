@@ -2,6 +2,26 @@
 
 [Русский](DECISIONS_RU.md) · [About](README_EN.md) · [User Guide](USER_GUIDE_EN.md)
 
+**Contents**
+
+- [The decision](#the-decision)
+- [Why separate](#why-separate)
+- [What follows from it](#what-follows-from-it)
+- [The decision](#the-decision-1)
+- [A single source of truth](#a-single-source-of-truth)
+- [A real write requires explicit intent](#a-real-write-requires-explicit-intent)
+- [A filter cannot silently become a full copy](#a-filter-cannot-silently-become-a-full-copy)
+- [Writing happens in phases, deletion last](#writing-happens-in-phases-deletion-last)
+- [Three ways to compare](#three-ways-to-compare)
+- [Conflicts are not success](#conflicts-are-not-success)
+- [Details that once cost dearly](#details-that-once-cost-dearly)
+- [Tests that must stay green](#tests-that-must-stay-green)
+- [Not here](#not-here)
+- [The decision](#the-decision-2)
+- [What that means in practice](#what-that-means-in-practice)
+- [The exception that isn't one](#the-exception-that-isnt-one)
+- [Technical Appendix: Profile Keys](#technical-appendix-profile-keys)
+
 Three decisions that shaped the program. Each was made not for elegance but after
 a case where the alternative was worse.
 

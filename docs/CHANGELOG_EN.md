@@ -2,6 +2,17 @@
 
 [Русский](CHANGELOG_RU.md) · [About](README_EN.md) · [User Guide](USER_GUIDE_EN.md) · [Decisions](DECISIONS_EN.md)
 
+**Contents**
+
+- [1.10.0](#1100)
+- [1.9.0](#190)
+- [1.8.0](#180)
+- [1.7.3](#173)
+- [1.7.2](#172)
+- [1.7.1](#171)
+- [1.7.0](#170)
+- [Earlier versions](#earlier-versions)
+
 This history exists not to count versions but to avoid fixing the same thing
 twice. What changed is here — and why.
 

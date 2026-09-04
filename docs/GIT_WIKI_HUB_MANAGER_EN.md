@@ -1,5 +1,32 @@
 # GIT_WIKI_HUB_MANAGER EN - Audion Hub Manager Map
 
+**Contents**
+
+- [1. Core Model](#1-core-model)
+- [2. Local Database And Main Configs](#2-local-database-and-main-configs)
+- [3. Project Registry](#3-project-registry)
+- [4. MIRROR Profiles](#4-mirror-profiles)
+- [5. Main Window Layout](#5-main-window-layout)
+- [6. Header](#6-header)
+- [7. Left Control Panel](#7-left-control-panel)
+- [8. Structure Tree](#8-structure-tree)
+- [9. Inspector: Quick](#9-inspector-quick)
+- [10. Inspector: Basket](#10-inspector-basket)
+- [11. Inspector: Branch](#11-inspector-branch)
+- [12. Inspector: Remote](#12-inspector-remote)
+- [13. Inspector: Editor](#13-inspector-editor)
+- [14. Inspector: Reader](#14-inspector-reader)
+- [15. Inspector: Diff](#15-inspector-diff)
+- [16. Inspector: History](#16-inspector-history)
+- [17. Inspector: Details](#17-inspector-details)
+- [18. Inspector: Storage And Safety](#18-inspector-storage-and-safety)
+- [19. Terminal / Command Dock](#19-terminal--command-dock)
+- [20. GitHub/GitLab Remote Workflow](#20-githubgitlab-remote-workflow)
+- [21. MIRROR And Config Maintenance](#21-mirror-and-config-maintenance)
+- [22. Detailed Git-Work Function Map](#22-detailed-git-work-function-map)
+- [23. Weak Spots And Missing Frequent Commands](#23-weak-spots-and-missing-frequent-commands)
+- [24. Suggested Next Backlog](#24-suggested-next-backlog)
+
 Status: 2026-06-03.
 
 This document is the working wiki map for Audion Hub Manager. It describes the

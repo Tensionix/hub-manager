@@ -2,6 +2,21 @@
 
 [Русский](README_RU.md) · [User Guide](USER_GUIDE_EN.md) · [Decisions](DECISIONS_EN.md) · [History](CHANGELOG_EN.md)
 
+**Contents**
+
+- [Why It Exists](#why-it-exists)
+- [Principles](#principles)
+- [What It Looks Like in Use](#what-it-looks-like-in-use)
+- [What It Can Do](#what-it-can-do)
+- [Next](#next)
+- [Technical Reference](#technical-reference)
+  - [Running](#running)
+  - [Describing a Project](#describing-a-project)
+  - [Where Things Live](#where-things-live)
+  - [Verification](#verification)
+  - [Restoring From the Mirror](#restoring-from-the-mirror)
+  - [Rules That Cannot Be Broken](#rules-that-cannot-be-broken)
+
 A portable workshop for projects: see what a project contains, keep its history
 in Git, and maintain a clean mirror — without dragging runtimes, caches, logs,
 and local keys along with it.

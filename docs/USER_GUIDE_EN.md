@@ -2,6 +2,17 @@
 
 [Русский](USER_GUIDE_RU.md) · [About](README_EN.md) · [Decisions](DECISIONS_EN.md) · [History](CHANGELOG_EN.md)
 
+**Contents**
+
+- [First Run](#first-run)
+- [Registering a Project](#registering-a-project)
+- [The Mirror](#the-mirror)
+- [History in Git](#history-in-git)
+- [Remotes and Sign-In](#remotes-and-sign-in)
+- [Restoring](#restoring)
+- [Checking After Changes](#checking-after-changes)
+- [Technical Reference](#technical-reference)
+
 Day-to-day work: register a project, build a mirror, keep history, connect a
 remote, restore from a copy.
 

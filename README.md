@@ -10,7 +10,7 @@
 
 **Version 1.10.1** · 2026-09-04 · 183.6 MB
 
-- [Direct download](https://dl.audion.dev/hub-manager/1.10.1/Audion_Hub_Manager_v1.10.1_Full.zip) — unmetered, no rate limits
+- [Direct download](https://audion.dev/get/hub-manager/1.10.1/Audion_Hub_Manager_v1.10.1_Full.zip) — unmetered, no rate limits
 - [Project page](https://audion.dev/downloads/hub-manager) — every version and how to install
 
 <p align="center"><img src="docs/screenshot.png" alt="The program window" width="560"></p>
@@ -23,7 +23,16 @@ An **Audion** tool, published by [Tensionix](https://github.com/Tensionix).
 <!-- /audion:release -->
 
 
-[Русский](README_RU.md) · [User Guide](USER_GUIDE_EN.md) · [Decisions](DECISIONS_EN.md) · [History](CHANGELOG_EN.md)
+[Русский](Docs/README_RU.md) · [User Guide](Docs/USER_GUIDE_EN.md) · [Decisions](Docs/DECISIONS_EN.md) · [History](Docs/CHANGELOG_EN.md)
+
+**Contents**
+
+- [Why It Exists](#why-it-exists)
+- [Principles](#principles)
+- [What It Looks Like in Use](#what-it-looks-like-in-use)
+- [What It Can Do](#what-it-can-do)
+- [Next](#next)
+- [Technical Reference](#technical-reference)
 
 A portable workshop for projects: see what a project contains, keep its history
 in Git, and maintain a clean mirror — without dragging runtimes, caches, logs,
@@ -120,11 +129,11 @@ handover to VS Code.
 
 ## Next
 
-* [User Guide](USER_GUIDE_EN.md) — step by step: projects, mirror, Git, sign-in.
-* [Decisions](DECISIONS_EN.md) — why three layers, why the mirror works this way,
+* [User Guide](Docs/USER_GUIDE_EN.md) — step by step: projects, mirror, Git, sign-in.
+* [Decisions](Docs/DECISIONS_EN.md) — why three layers, why the mirror works this way,
   and why the program holds no passwords.
-* [History](CHANGELOG_EN.md) — what changed from version to version.
-* [Git wiki](GIT_WIKI_HUB_MANAGER_EN.md) — a detailed walk through Git work.
+* [History](Docs/CHANGELOG_EN.md) — what changed from version to version.
+* [Git wiki](Docs/GIT_WIKI_HUB_MANAGER_EN.md) — a detailed walk through Git work.
 
 ---
 

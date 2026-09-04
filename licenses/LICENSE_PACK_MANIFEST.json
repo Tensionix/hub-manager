@@ -1,7 +1,7 @@
 {
   "schema": "audion.build_licenses.pack_manifest.v1",
-  "generated_utc": "2026-09-01T04:35:22Z",
-  "run_id": "20260901T043515Z_audion-hub-manager_9c1aa555",
+  "generated_utc": "2026-09-04T02:29:23Z",
+  "run_id": "20260904T022915Z_audion-hub-manager_12ffe3ac",
   "project_id": "audion-hub-manager",
   "project_name": "Audion Hub Manager",
   "scan_root": "S:\\Release\\Audion Hub Manager",
@@ -9,8 +9,8 @@
   "files": [
     {
       "name": "THIRD_PARTY_NOTICES.txt",
-      "sha256": "8a5de63a77b8dbce58ef30c57209b197a6b5afc64865ea76ee147b57864809c4",
-      "size": 403070
+      "sha256": "eb5d56afca2de59c3558828b559f6428cfa10577741ee25598ec59aaa37365df",
+      "size": 451380
     },
     {
       "name": "SOURCE_CODE_AVAILABILITY.txt",
@@ -19,18 +19,18 @@
     },
     {
       "name": "COMPONENTS.json",
-      "sha256": "696e17fee13b5e5a8d84a6cd8b87fad1869850dbbf0a0bd2174b819f69b5622f",
-      "size": 122216
+      "sha256": "9d467dbbd481239d49c25f8645c25e9f8a93367d40902d2e1cccc027deecacbf",
+      "size": 131209
     },
     {
       "name": "_records.json",
-      "sha256": "9a06d8f7b45def8207fc14fe99034a1c00941f1683291d1015efc7afdccee67d",
-      "size": 30410
+      "sha256": "5cc3cb41a2c8ac3034fa33a1f10d78fa565694f5800bbcce66e22e8896c44dbb",
+      "size": 32402
     },
     {
       "name": "LICENSE_SCAN_REPORT.md",
-      "sha256": "26389c1e0d7021b23fa07bfd1ad09396c36b33643345804b464f5953bb312d59",
-      "size": 5940
+      "sha256": "3f9318e916976855cb27c5366e122a24d52b0c4ebf36a4b9a046532adc503524",
+      "size": 6011
     }
   ]
 }

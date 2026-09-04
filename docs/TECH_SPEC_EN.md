@@ -1,5 +1,21 @@
 # TECH SPEC EN — Audion Hub Manager
 
+**Contents**
+
+- [1. Purpose](#1-purpose)
+- [2. Architecture Principle](#2-architecture-principle)
+- [2.1. Project Registry](#21-project-registry)
+- [3. MIRROR Engine](#3-mirror-engine)
+- [4. Projection Profiles](#4-projection-profiles)
+- [5. UI Layout](#5-ui-layout)
+- [6. Core Panes](#6-core-panes)
+- [7. Terminal Dock](#7-terminal-dock)
+- [8. Git Engine](#8-git-engine)
+- [9. Auth Policy](#9-auth-policy)
+- [10. Storage Policy](#10-storage-policy)
+- [11. Testing](#11-testing)
+- [12. Documentation Artifacts](#12-documentation-artifacts)
+
 ## 1. Purpose
 
 Audion Hub Manager is a local commander interface for:
