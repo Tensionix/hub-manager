@@ -23,7 +23,7 @@ An **Audion** tool, published by [Tensionix](https://github.com/Tensionix).
 <!-- /audion:release -->
 
 
-[Русский](docs/README_RU.md) · [User Guide](docs/USER_GUIDE_EN.md) · [Decisions](docs/DECISIONS_EN.md) · [History](docs/CHANGELOG_EN.md)
+[Русский](Docs/README_RU.md) · [User Guide](Docs/USER_GUIDE_EN.md) · [Decisions](Docs/DECISIONS_EN.md) · [History](Docs/CHANGELOG_EN.md)
 
 **Contents**
 
@@ -129,11 +129,11 @@ handover to VS Code.
 
 ## Next
 
-* [User Guide](docs/USER_GUIDE_EN.md) — step by step: projects, mirror, Git, sign-in.
-* [Decisions](docs/DECISIONS_EN.md) — why three layers, why the mirror works this way,
+* [User Guide](Docs/USER_GUIDE_EN.md) — step by step: projects, mirror, Git, sign-in.
+* [Decisions](Docs/DECISIONS_EN.md) — why three layers, why the mirror works this way,
   and why the program holds no passwords.
-* [History](docs/CHANGELOG_EN.md) — what changed from version to version.
-* [Git wiki](docs/GIT_WIKI_HUB_MANAGER_EN.md) — a detailed walk through Git work.
+* [History](Docs/CHANGELOG_EN.md) — what changed from version to version.
+* [Git wiki](Docs/GIT_WIKI_HUB_MANAGER_EN.md) — a detailed walk through Git work.
 
 ---
 
