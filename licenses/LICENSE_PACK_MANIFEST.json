@@ -1,36 +1,36 @@
 {
   "schema": "audion.build_licenses.pack_manifest.v1",
-  "generated_utc": "2026-09-04T02:29:23Z",
-  "run_id": "20260904T022915Z_audion-hub-manager_12ffe3ac",
+  "generated_utc": "2026-09-18T02:56:11Z",
+  "run_id": "20260918T025604Z_audion-hub-manager_14ec2fb4",
   "project_id": "audion-hub-manager",
   "project_name": "Audion Hub Manager",
-  "scan_root": "S:\\Release\\Audion Hub Manager",
-  "output_dir": "S:\\Release\\Audion Hub Manager\\licenses",
+  "scan_root": "S:\\Releases\\Audion Hub Manager",
+  "output_dir": "S:\\Releases\\Audion Hub Manager\\licenses",
   "files": [
     {
       "name": "THIRD_PARTY_NOTICES.txt",
-      "sha256": "eb5d56afca2de59c3558828b559f6428cfa10577741ee25598ec59aaa37365df",
-      "size": 451380
+      "sha256": "ce206b7b8545669f59be6d6bb2a36169315b552374e1bfda9068b57222d38304",
+      "size": 450335
     },
     {
       "name": "SOURCE_CODE_AVAILABILITY.txt",
-      "sha256": "4decbf08b014f34fb32f636441dff9315d544d9e0934de41a456cb1106068619",
+      "sha256": "3f51513c237eb9a500b0a4f702b392058c398e867c8b887127562a70f3c7949c",
       "size": 1218
     },
     {
       "name": "COMPONENTS.json",
-      "sha256": "9d467dbbd481239d49c25f8645c25e9f8a93367d40902d2e1cccc027deecacbf",
-      "size": 131209
+      "sha256": "f3a0c3480bfd3dfc00d047e8776606cfe1408d9a37a98069acda0d847c7f9229",
+      "size": 131212
     },
     {
       "name": "_records.json",
-      "sha256": "5cc3cb41a2c8ac3034fa33a1f10d78fa565694f5800bbcce66e22e8896c44dbb",
+      "sha256": "b56d413b5bda71be8ddadf1be7f3ae96faae0293a4aa0432a8c83fa22a1464c7",
       "size": 32402
     },
     {
       "name": "LICENSE_SCAN_REPORT.md",
-      "sha256": "3f9318e916976855cb27c5366e122a24d52b0c4ebf36a4b9a046532adc503524",
-      "size": 6011
+      "sha256": "6dc39e0f942fa019b4ad489192f70c70ca4ad79249bab956d925523e06a8075e",
+      "size": 6014
     }
   ]
 }
