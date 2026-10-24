@@ -3,19 +3,20 @@
 <!-- audion:release -->
 <p align="center">
   <a href="https://audion.dev/downloads/hub-manager"><img alt="Windows" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0b6db8?style=flat-square&logo=windows&logoColor=white"></a>
-  <a href="https://github.com/Tensionix/hub-manager/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/Tensionix/hub-manager?style=flat-square&label=release&color=e08a63"></a>
+  <a href="https://github.com/Tensionix/hub-manager/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/Tensionix/hub-manager?style=flat-square&label=release&color=2a7488"></a>
   <a href="https://github.com/Tensionix/hub-manager/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/Tensionix/hub-manager/total?style=flat-square&label=downloads&color=5fd08a"></a>
   <a href="https://github.com/Tensionix/hub-manager/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/Tensionix/hub-manager?style=flat-square&color=5fd08a&logo=apache&logoColor=white&cacheSeconds=3600"></a>
 </p>
 
-**Version 1.10.2** · 2026-09-20 · 184.0 MB
+**Version 2.0.0** · 2026-10-25 · 112.0 MB
 
-- [Direct download](https://audion.dev/get/hub-manager/1.10.2/Audion_Hub_Manager_v1.10.2_Full.zip) — unmetered, no rate limits
+- [Direct download](https://dl.audion.dev/hub-manager/2.0.0/Audion_Hub_Manager_v2.0.0_Full.zip) — unmetered, no rate limits
 - [Project page](https://audion.dev/downloads/hub-manager) — every version and how to install
+- [GitHub release](https://github.com/Tensionix/hub-manager/releases/tag/v2.0.0)
 
 <p align="center"><img src="docs/screenshot.png" alt="The program window" width="560"></p>
 
-`SHA-256: 0f150f79710b0152e82388a478c01c1fe1e669ab930312eab0b8fa00312f49e5`
+`SHA-256: a503576c0f67a447600d9d0dffb81623bc1a7bb60da30b668d2d638868316fa1`
 
 ---
 
