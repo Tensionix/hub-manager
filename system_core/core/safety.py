@@ -5,10 +5,8 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-COMMAND_SEPARATORS = {"&&", "||", "&", ";", "|"}
-SHELL_COMMANDS = {"sh", "bash", "zsh", "cmd", "powershell", "pwsh"}
-WINDOWS_RECURSIVE_DELETE_COMMANDS = {"del", "erase", "rd", "rmdir"}
-POWERSHELL_REMOVE_ITEM_COMMANDS = {"remove-item", "rm", "ri", "del", "erase", "rd", "rmdir"}
+from .scan_engine import is_link
+
 
 HEAVY_EXTENSIONS = {
     ".zip",
@@ -57,13 +55,17 @@ DEFAULT_SKIP_DIRS = {
 }
 SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("private_key_block", re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----")),
+    # The [Interface] of WireGuard and AmneziaWG: a file of any name, a key of 32 bytes in base64.
+    ("wireguard_private_key", re.compile(r"(?im)^\s*PrivateKey\s*=\s*[A-Za-z0-9+/]{42,43}=")),
     ("aws_access_key_id", re.compile(r"\bA[KS]IA[0-9A-Z]{16}\b")),
+    # rclone.conf and ~/.aws/credentials: the secret of S3 is a line of its own, not a word "secret".
+    ("s3_secret_access_key", re.compile(r"(?im)^\s*(?:aws_)?secret_access_key\s*=\s*\S{16,}")),
     ("github_token", re.compile(r"\bgh[pousr]_[A-Za-z0-9_]{20,}\b")),
     ("openai_api_key", re.compile(r"\bsk-[A-Za-z0-9]{20,}\b")),
     (
         "secret_assignment",
         re.compile(
-            r"(?i)\b(api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|password|passwd|secret)\b"
+            r"(?i)\b(api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|password|passwd|pass|secret)\b"
             r"\s*[:=]\s*['\"]?([A-Za-z0-9_./+=:@-]{12,})"
         ),
     ),
@@ -93,281 +95,6 @@ class SafetyFinding:
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
-
-
-def _command_name(token: str) -> str:
-    name = token.strip().strip("'\"").replace("\\", "/").rsplit("/", 1)[-1].lower()
-    for suffix in (".exe", ".cmd", ".bat", ".ps1"):
-        if name.endswith(suffix):
-            return name[: -len(suffix)]
-    return name
-
-
-def _tokenize_command(command: str) -> list[str]:
-    tokens: list[str] = []
-    current: list[str] = []
-    quote: str | None = None
-    index = 0
-
-    def flush() -> None:
-        if current:
-            tokens.append("".join(current))
-            current.clear()
-
-    while index < len(command):
-        char = command[index]
-        if quote:
-            if char == quote:
-                quote = None
-            elif char == "\\" and quote == '"' and index + 1 < len(command):
-                index += 1
-                current.append(command[index])
-            else:
-                current.append(char)
-            index += 1
-            continue
-
-        if char in {"'", '"'}:
-            quote = char
-            index += 1
-            continue
-        if char in "\r\n":
-            flush()
-            tokens.append(";")
-            index += 1
-            continue
-        if char.isspace():
-            flush()
-            index += 1
-            continue
-        two = command[index : index + 2]
-        if two in {"&&", "||"}:
-            flush()
-            tokens.append(two)
-            index += 2
-            continue
-        if char in {"&", ";", "|"}:
-            flush()
-            tokens.append(char)
-            index += 1
-            continue
-        current.append(char)
-        index += 1
-
-    flush()
-    return tokens
-
-
-def _iter_command_segments(tokens: list[str]) -> list[list[str]]:
-    segments: list[list[str]] = []
-    current: list[str] = []
-    for token in tokens:
-        if token in COMMAND_SEPARATORS:
-            if current:
-                segments.append(current)
-                current = []
-            continue
-        current.append(token)
-    if current:
-        segments.append(current)
-    return segments
-
-
-def _short_flag_chars(token: str) -> set[str]:
-    if not token.startswith("-") or token.startswith("--") or token == "-":
-        return set()
-    return {char.lower() for char in token[1:] if char.isalpha()}
-
-
-def _has_any_flag(tokens: list[str], long_flags: set[str], short_flags: set[str]) -> bool:
-    for token in tokens:
-        lowered = token.lower()
-        if lowered in long_flags or any(lowered.startswith(f"{flag}=") for flag in long_flags):
-            return True
-        if _short_flag_chars(token) & short_flags:
-            return True
-    return False
-
-
-def _has_windows_switch(tokens: list[str], switch: str) -> bool:
-    needle = f"/{switch.lower()}"
-    return any(token.lower().startswith(needle) for token in tokens)
-
-
-def _rm_is_dangerous(args: list[str]) -> bool:
-    has_recursive = _has_any_flag(args, {"--recursive", "--dir"}, {"r"})
-    return has_recursive
-
-
-def _windows_delete_is_dangerous(args: list[str]) -> bool:
-    return _has_windows_switch(args, "s")
-
-
-def _powershell_remove_item_is_dangerous(args: list[str]) -> bool:
-    lowered = [arg.lower() for arg in args]
-    if any(arg.startswith("-whatif") for arg in lowered):
-        return False
-    return any(arg in {"-recurse", "-recursive", "-r"} or arg.startswith("-recurse:") for arg in lowered)
-
-
-def _git_clean_is_dangerous(args: list[str]) -> bool:
-    has_force = _has_any_flag(args, {"--force"}, {"f"})
-    dry_run = _has_any_flag(args, {"--dry-run"}, {"n"}) or _has_any_flag(args, {"--interactive"}, {"i"})
-    return has_force and not dry_run
-
-
-def _git_push_is_dangerous(args: list[str]) -> bool:
-    force_flags = {"--force", "--force-with-lease", "--force-if-includes"}
-    return _has_any_flag(args, force_flags, {"f"})
-
-
-def _git_is_dangerous(tokens: list[str]) -> bool:
-    index = 1
-    options_with_value = {"-c", "-C", "--git-dir", "--work-tree", "--namespace", "--config-env"}
-    while index < len(tokens):
-        token = tokens[index]
-        if token in options_with_value:
-            index += 2
-            continue
-        if token.startswith("--git-dir=") or token.startswith("--work-tree=") or token.startswith("--namespace="):
-            index += 1
-            continue
-        if token.startswith("-"):
-            index += 1
-            continue
-        break
-    if index >= len(tokens):
-        return False
-
-    subcommand = tokens[index].lower()
-    args = tokens[index + 1 :]
-    if subcommand == "reset":
-        return any(arg.lower() == "--hard" for arg in args)
-    if subcommand == "clean":
-        return _git_clean_is_dangerous(args)
-    if subcommand == "push":
-        return _git_push_is_dangerous(args)
-    return False
-
-
-def _shell_payload_is_dangerous(tokens: list[str], depth: int) -> bool:
-    command = _command_name(tokens[0])
-    lowered = [token.lower() for token in tokens[1:]]
-    if command in {"sh", "bash", "zsh"}:
-        for index, token in enumerate(lowered):
-            if token == "-c" or (token.startswith("-") and "c" in token[1:]):
-                payload_index = index + 2
-                if payload_index < len(tokens):
-                    return _is_dangerous_command(tokens[payload_index], depth + 1)
-        return False
-
-    if command == "cmd":
-        for index, token in enumerate(lowered):
-            if token in {"/c", "-c"}:
-                payload = " ".join(tokens[index + 2 :])
-                return bool(payload and _is_dangerous_command(payload, depth + 1))
-        return False
-
-    if command in {"powershell", "pwsh"}:
-        for index, token in enumerate(lowered):
-            if token in {"-encodedcommand", "-enc", "/encodedcommand", "/enc"}:
-                return True
-            if token in {"-command", "-c", "/command", "/c"}:
-                payload = " ".join(tokens[index + 2 :])
-                return bool(payload and _is_dangerous_command(payload, depth + 1))
-        return False
-
-    return False
-
-
-def _strip_env_and_wrappers(tokens: list[str]) -> list[str]:
-    index = 0
-    assignment_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
-    while index < len(tokens) and assignment_re.match(tokens[index]):
-        index += 1
-    if index < len(tokens) and _command_name(tokens[index]) == "sudo":
-        index += 1
-        while index < len(tokens) and tokens[index].startswith("-"):
-            index += 1
-    if index < len(tokens) and _command_name(tokens[index]) in {"command", "exec"}:
-        index += 1
-    if index < len(tokens) and _command_name(tokens[index]) == "env":
-        index += 1
-        while index < len(tokens) and (tokens[index].startswith("-") or assignment_re.match(tokens[index])):
-            index += 1
-    return tokens[index:]
-
-
-def _segment_is_dangerous(segment: list[str], depth: int) -> bool:
-    segment = _strip_env_and_wrappers(segment)
-    if not segment:
-        return False
-    command = _command_name(segment[0])
-    args = segment[1:]
-    if command in SHELL_COMMANDS and _shell_payload_is_dangerous(segment, depth):
-        return True
-    if command == "git":
-        return _git_is_dangerous(segment)
-    if command == "rm" and _rm_is_dangerous(args):
-        return True
-    if command in WINDOWS_RECURSIVE_DELETE_COMMANDS and _windows_delete_is_dangerous(args):
-        return True
-    if command in POWERSHELL_REMOVE_ITEM_COMMANDS and _powershell_remove_item_is_dangerous(args):
-        return True
-    return False
-
-
-def _extract_dollar_subcommands(command: str) -> list[str]:
-    payloads: list[str] = []
-    index = 0
-    while index < len(command):
-        start = command.find("$(", index)
-        if start < 0:
-            break
-        depth = 1
-        quote: str | None = None
-        cursor = start + 2
-        while cursor < len(command):
-            char = command[cursor]
-            if quote:
-                if char == quote:
-                    quote = None
-                elif char == "\\" and quote == '"':
-                    cursor += 1
-            else:
-                if char in {"'", '"'}:
-                    quote = char
-                elif command.startswith("$(", cursor):
-                    depth += 1
-                    cursor += 1
-                elif char == ")":
-                    depth -= 1
-                    if depth == 0:
-                        payloads.append(command[start + 2 : cursor])
-                        index = cursor + 1
-                        break
-            cursor += 1
-        else:
-            break
-    return payloads
-
-
-def _extract_backtick_subcommands(command: str) -> list[str]:
-    return [match.group(1) for match in re.finditer(r"`([^`]*)`", command)]
-
-
-def _is_dangerous_command(command: str, depth: int = 0) -> bool:
-    if depth > 4:
-        return True
-    for payload in [*_extract_dollar_subcommands(command), *_extract_backtick_subcommands(command)]:
-        if _is_dangerous_command(payload, depth + 1):
-            return True
-    tokens = _tokenize_command(command)
-    return any(_segment_is_dangerous(segment, depth) for segment in _iter_command_segments(tokens))
-
-
-def is_dangerous_command(command: str) -> bool:
-    return _is_dangerous_command(str(command or ""))
 
 
 def _looks_like_secret_name(path: Path) -> bool:
@@ -409,15 +136,17 @@ def _placeholder_value(value: str) -> bool:
     return normalized in PLACEHOLDER_VALUES
 
 
-def _secret_content_flags(path: Path, max_content_bytes: int) -> list[str]:
+def _secret_content_flags(path: Path, max_content_bytes: int) -> tuple[list[str], str]:
+    """The flags of what the text holds, and why it could not be read ("" when it was). A file not read is not a clean
+    file: a file held open by another program once passed the scan with a secret in it."""
     try:
         if path.stat().st_size > max_content_bytes:
-            return []
+            return [], ""
         data = path.read_bytes()
-    except OSError:
-        return []
+    except OSError as exc:
+        return [], f"{exc.__class__.__name__}: {exc.strerror or exc}"
     if not data or _is_probably_binary(data):
-        return []
+        return [], ""
     text = data.decode("utf-8", errors="ignore")
     flags: list[str] = []
     for name, pattern in SECRET_PATTERNS:
@@ -427,7 +156,7 @@ def _secret_content_flags(path: Path, max_content_bytes: int) -> list[str]:
                     continue
             flags.append(name)
             break
-    return flags
+    return flags, ""
 
 
 def _finding_severity(flags: list[str]) -> str:
@@ -487,6 +216,10 @@ def scan_safety(
             errors.append(f"{_safe_rel(current, root)}: {exc}")
             continue
         for entry in entries:
+            if is_link(entry):
+                # A junction or a link leads out of the project: not followed, as the mirror does not follow it.
+                skipped_dirs.append(_safe_rel(entry, root))
+                continue
             if entry.is_dir():
                 if entry.name.lower() in skipped_dir_names:
                     skipped_dirs.append(_safe_rel(entry, root))
@@ -497,7 +230,9 @@ def scan_safety(
                 continue
             files_scanned += 1
             flags = classify_path(entry, heavy_threshold=heavy_threshold)
-            content_flags = _secret_content_flags(entry, max_content_bytes=max_content_bytes)
+            content_flags, unread = _secret_content_flags(entry, max_content_bytes=max_content_bytes)
+            if unread:
+                errors.append(f"{_safe_rel(entry, root)}: not read - {unread}")
             all_flags = list(dict.fromkeys([*flags, *content_flags]))
             if not all_flags:
                 continue

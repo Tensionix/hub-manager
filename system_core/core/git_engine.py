@@ -2,13 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
-import json
-import os
 import re
 import subprocess
 
-from .terminal_render import decode_output_bytes
+from .output_decode import decode_process_bytes
 
 
 @dataclass
@@ -60,17 +57,6 @@ class GitStatus:
         if self.files is None:
             self.files = []
 
-    def status_map(self) -> dict[str, str]:
-        return {item.path: item.label for item in self.files}
-
-
-@dataclass(frozen=True)
-class RemoteDefinition:
-    name: str
-    url: str
-    title: str = ""
-    enabled: bool = True
-
 
 def run_command(
     args: list[str],
@@ -87,8 +73,8 @@ def run_command(
         check=False,
         env=env,
     )
-    stdout = decode_output_bytes(completed.stdout) if isinstance(completed.stdout, bytes) else str(completed.stdout or "")
-    stderr = decode_output_bytes(completed.stderr) if isinstance(completed.stderr, bytes) else str(completed.stderr or "")
+    stdout = decode_process_bytes(completed.stdout) if isinstance(completed.stdout, bytes) else str(completed.stdout or "")
+    stderr = decode_process_bytes(completed.stderr) if isinstance(completed.stderr, bytes) else str(completed.stderr or "")
     return CommandResult(args, str(cwd_path), completed.returncode, stdout, stderr)
 
 
@@ -183,33 +169,6 @@ def status(root: Path) -> tuple[GitStatus, CommandResult]:
     return parse_status(root, result.stdout), result
 
 
-def diff(root: Path, path: str | None = None, cached: bool = False) -> CommandResult:
-    args = ["diff"]
-    if cached:
-        args.append("--cached")
-    if path:
-        args.extend(["--", path])
-    return git(root, *args, timeout=120)
-
-
-def remotes(root: Path) -> CommandResult:
-    return git(root, "remote", "-v")
-
-
-def remote_names(root: Path) -> tuple[list[str], CommandResult]:
-    result = git(root, "remote")
-    names = [line.strip() for line in result.stdout.splitlines() if line.strip()] if result.ok else []
-    return names, result
-
-
-def remote_push_urls(root: Path, remote: str = "origin") -> tuple[list[str], CommandResult]:
-    result = git(root, "config", "--get-all", f"remote.{remote}.pushurl")
-    if result.returncode == 1 and not result.stdout.strip() and not result.stderr.strip():
-        result = CommandResult(result.command, result.cwd, 0, "", "")
-    urls = [line.strip() for line in result.stdout.splitlines() if line.strip()] if result.ok else []
-    return urls, result
-
-
 # `ext::` and `fd::` let a remote URL name a command for Git to run, and a URL
 # starting with `-` can be read as an option by the Git command it is passed to.
 # Remote URLs can arrive from a config file shipped with someone else's project.
@@ -231,165 +190,3 @@ def validate_remote_url(url: str) -> str:
     return text
 
 
-def enabled_remotes_from_config(config_path: Path) -> list[RemoteDefinition]:
-    payload = json.loads(config_path.read_text(encoding="utf-8"))
-    items = payload.get("global_remotes", []) if isinstance(payload, dict) else []
-    remotes_config: list[RemoteDefinition] = []
-    for item in items:
-        if not isinstance(item, dict) or not item.get("enabled", False):
-            continue
-        name = str(item.get("name", "")).strip()
-        url = str(item.get("url", "")).strip()
-        if not name or not url:
-            continue
-        if not re.match(r"^[A-Za-z0-9._-]+$", name):
-            raise ValueError(f"Unsafe remote name: {name}")
-        validate_remote_url(url)
-        remotes_config.append(
-            RemoteDefinition(
-                name=name,
-                url=url,
-                title=str(item.get("title", "")).strip(),
-                enabled=True,
-            )
-        )
-    return remotes_config
-
-
-def apply_remotes_from_config(root: Path, config_path: Path) -> list[CommandResult]:
-    configured = enabled_remotes_from_config(config_path)
-    names, names_result = remote_names(root)
-    results = [names_result]
-    if not names_result.ok:
-        return results
-    existing = set(names)
-    for remote in configured:
-        if remote.name in existing:
-            result = git(root, "remote", "set-url", remote.name, remote.url)
-        else:
-            result = git(root, "remote", "add", remote.name, remote.url)
-            if result.ok:
-                existing.add(remote.name)
-        results.append(result)
-        if not result.ok:
-            break
-    return results
-
-
-def configure_origin_push_urls_from_config(root: Path, config_path: Path, remote: str = "origin") -> list[CommandResult]:
-    configured = enabled_remotes_from_config(config_path)
-    if not configured:
-        return [CommandResult(["git", "remote", "configure-origin-push-urls"], str(root), 1, "", "No enabled remotes in config.")]
-
-    names, names_result = remote_names(root)
-    results = [names_result]
-    if not names_result.ok:
-        return results
-
-    if remote not in set(names):
-        add_result = git(root, "remote", "add", remote, configured[0].url)
-        results.append(add_result)
-        if not add_result.ok:
-            return results
-
-    existing_urls, push_urls_result = remote_push_urls(root, remote)
-    results.append(push_urls_result)
-    if not push_urls_result.ok:
-        return results
-
-    existing = set(existing_urls)
-    for item in configured:
-        if item.url in existing:
-            continue
-        result = git(root, "remote", "set-url", "--add", "--push", remote, item.url)
-        results.append(result)
-        if not result.ok:
-            break
-        existing.add(item.url)
-    return results
-
-
-def clone(parent_dir: Path, url: str, directory: str = "") -> CommandResult:
-    """Clone into `parent_dir`.
-
-    Runs git as an argument list, never through a shell, and passes `--` so a
-    URL can never be read as an option.
-    """
-    validate_remote_url(url)
-    parent_dir.mkdir(parents=True, exist_ok=True)
-    args = ["clone", "--", url]
-    if directory:
-        args.append(directory)
-    # Without a usable credential Git would sit waiting for a password that the
-    # GUI has no way to show, so fail fast instead of hanging the application.
-    env = os.environ.copy()
-    env["GIT_TERMINAL_PROMPT"] = "0"
-    return run_command(["git", *args], cwd=parent_dir, timeout=None, env=env)
-
-
-def directory_name_from_url(url: str) -> str:
-    """The folder name `git clone` would pick for this URL."""
-    text = str(url or "").strip().rstrip("/")
-    if not text:
-        return ""
-    tail = re.split(r"[/:]", text)[-1]
-    if tail.endswith(".git"):
-        tail = tail[:-4]
-    return tail.strip()
-
-
-def fetch_all(root: Path) -> CommandResult:
-    return git(root, "fetch", "--all", "--prune", timeout=None)
-
-
-def pull_ff_only(root: Path, remote: str = "origin", branch: str = "main") -> CommandResult:
-    return git(root, "pull", "--ff-only", remote, branch, timeout=None)
-
-
-def stage(root: Path, paths: Iterable[str]) -> CommandResult:
-    path_list = [item for item in paths if item]
-    return git(root, "add", "--", *path_list)
-
-
-def unstage(root: Path, paths: Iterable[str]) -> CommandResult:
-    path_list = [item for item in paths if item]
-    return git(root, "restore", "--staged", "--", *path_list)
-
-
-def commit(root: Path, message: str) -> CommandResult:
-    return git(root, "commit", "-m", message, timeout=None)
-
-
-def commit_paths(root: Path, message: str, paths: Iterable[str]) -> CommandResult:
-    path_list = [item for item in paths if item]
-    return git(root, "commit", "--only", "-m", message, "--", *path_list, timeout=None)
-
-
-def create_annotated_tag(root: Path, tag: str, message: str) -> CommandResult:
-    return git(root, "tag", "-a", tag, "-m", message, timeout=None)
-
-
-def push(root: Path, remote: str = "origin", branch: str = "main", *, follow_tags: bool = True) -> CommandResult:
-    args = ["push"]
-    if follow_tags:
-        args.append("--follow-tags")
-    args.extend([remote, branch])
-    return git(root, *args, timeout=None)
-
-
-def push_all_remotes(root: Path, branch: str = "main", *, follow_tags: bool = True) -> list[CommandResult]:
-    names, names_result = remote_names(root)
-    results = [names_result]
-    if not names_result.ok:
-        return results
-    for remote in names:
-        result = push(root, remote, branch, follow_tags=follow_tags)
-        results.append(result)
-        if not result.ok:
-            break
-    return results
-
-
-def create_bundle(root: Path, output_path: Path, branch: str = "main") -> CommandResult:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    return git(root, "bundle", "create", str(output_path), branch, "--tags", timeout=None)

@@ -1,28 +1,3 @@
 {
-  "global_remotes": [
-    {
-      "name": "github",
-      "title": "GitHub",
-      "enabled": true,
-      "url": "git@github.com:audion/Audion_Hub.git"
-    },
-    {
-      "name": "gitlab",
-      "title": "GitLab",
-      "enabled": true,
-      "url": "git@gitlab.com:audion/Audion_Hub.git"
-    },
-    {
-      "name": "codeberg",
-      "title": "Codeberg",
-      "enabled": false,
-      "url": "git@codeberg.org:audion/Audion_Hub.git"
-    },
-    {
-      "name": "local_nas",
-      "title": "Local NAS bare mirror",
-      "enabled": false,
-      "url": "file:///Z:/git-mirrors/Audion_Hub.git"
-    }
-  ]
+  "global_remotes": []
 }

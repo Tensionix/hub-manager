@@ -1,0 +1,223 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:AudionHubManager.Views"
+        x:Class="AudionHubManager.MainWindow"
+        Title="Audion Hub Manager"
+        Width="1600" Height="900" MinWidth="1280" MinHeight="760"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource AppBg}"
+        Foreground="{DynamicResource TextMain}"
+        FontFamily="{DynamicResource FontUi}"
+        Icon="avares://AudionHubManager/Assets/app.ico"
+        FontSize="{DynamicResource FontBase}">
+  <!--
+    The layout of Hub Manager: the program and its look in the header; the sections - the modes of the window - as a
+    band under it; the project and its layers, which say where every Git command goes; the page of the section on the
+    left with the frequent operations of the mode and their fields under it; the terminal on the right; the state and
+    the next step at the bottom. What a page holds is built in code (MainWindow.*.cs): it is the state of a repository.
+  -->
+  <Grid RowDefinitions="Auto,*">
+
+  <!-- The header: the name of the program is ABOUT; the tools of this machine; how the window speaks and looks. -->
+  <Border Grid.Row="0" Classes="headband">
+    <Grid ColumnDefinitions="Auto,*,Auto">
+      <Button Grid.Column="0" x:Name="TitleButton" Classes="brand" AutomationProperties.AutomationId="title_about"
+              ToolTip.Tip="О программе: версия, папки, лицензия.">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <TextBlock Text="AUDION HUB MANAGER" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+          <TextBlock x:Name="VersionText" Classes="caption" VerticalAlignment="Center"/>
+        </StackPanel>
+      </Button>
+      <!-- git, gh, glab, BLAKE3, VS Code: a dot - found or not -, the mark, the version; the whole in the tooltip. -->
+      <views:FitRow x:Name="ToolRow" Grid.Column="1" Spacing="6" Margin="16,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+        <ToggleButton x:Name="ExplainButton" Classes="switch" Margin="0,0,8,0" AutomationProperties.AutomationId="explain"
+                      ToolTip.Tip="Объяснять команды: под каждой командой в терминале - строка простыми словами: что она сделала и как её отменить. Выключите, когда станет привычно.">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Path Classes="icon" Tag="graduation-cap"/>
+            <TextBlock Text="ОБЪЯСНЯТЬ"/>
+          </StackPanel>
+        </ToggleButton>
+        <ToggleButton x:Name="LangRu" Classes="switch" Content="RU" Margin="0,0,4,0" ToolTip.Tip="Язык окна: русский."/>
+        <ToggleButton x:Name="LangEn" Classes="switch" Content="EN" Margin="0,0,8,0" ToolTip.Tip="Язык окна: английский."/>
+        <ToggleButton x:Name="ThemeButton" Classes="switch icon" Margin="0" ToolTip.Tip="Тема: Audion Vault Dark (по умолчанию), Audion Code Dark, Audion Dark или Audion Light.">
+          <Path Classes="icon" Tag="sun"/>
+          <ToggleButton.Flyout>
+            <MenuFlyout Placement="BottomEdgeAlignedRight">
+              <MenuItem x:Name="ThemeVault" Header="Audion Vault Dark" ToggleType="Radio"/>
+              <MenuItem x:Name="ThemeCode" Header="Audion Code Dark" ToggleType="Radio"/>
+              <MenuItem x:Name="ThemeDark" Header="Audion Dark" ToggleType="Radio"/>
+              <MenuItem x:Name="ThemeLight" Header="Audion Light" ToggleType="Radio"/>
+            </MenuFlyout>
+          </ToggleButton.Flyout>
+        </ToggleButton>
+        <ToggleButton x:Name="SheetSettings" AutomationProperties.AutomationId="sheet_settings" Classes="switch" Content="SETTINGS" Margin="8,0,4,0"
+                      ToolTip.Tip="Настройки окна: шрифты и размеры, подтверждение опасных команд, где лежат настройки и журналы."/>
+        <ToggleButton x:Name="SheetAbout" AutomationProperties.AutomationId="sheet_about" Classes="switch" Content="ABOUT" Margin="0"
+                      ToolTip.Tip="О программе: версия, папки, лицензия."/>
+      </StackPanel>
+    </Grid>
+  </Border>
+
+  <Grid Grid.Row="1" x:Name="Shell" RowDefinitions="Auto,Auto,*,Auto" Margin="10,8,10,8" Focusable="True">
+
+    <!-- The sections: the modes of the window, each with its sign, its name and a line of what it is for. -->
+    <Grid Grid.Row="0" x:Name="SectionRow" Margin="0,0,0,7"/>
+
+    <!-- The layers of the project chosen in the column of projects: which repository the Git commands go to. -->
+    <Border Grid.Row="1" Classes="card" Padding="9,6,8,6" Margin="0,0,0,8">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <!-- ИСХОДНИК → MIRROR → GIT-КОПИЯ │ DOCS: the switch of the layer, with the branch and the distance of each. -->
+        <StackPanel Grid.Column="0" x:Name="LayerRow" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="1" x:Name="LayerPath" Classes="caption" TextTrimming="CharacterEllipsis" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="12,0,10,0"/>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+          <Button x:Name="OpenFolderButton" Classes="tool" AutomationProperties.AutomationId="open_folder" ToolTip.Tip="Открыть папку слоя в Проводнике.">
+            <Path Classes="icon" Tag="folder-open"/>
+          </Button>
+          <Button x:Name="OpenCodeButton" Classes="tool" AutomationProperties.AutomationId="open_code" ToolTip.Tip="Открыть слой в VS Code (путь к Code.exe - ОБСЛУЖИВАНИЕ).">
+            <Path Classes="icon" Tag="file-text"/>
+          </Button>
+          <Button x:Name="OpenTerminalButton" Classes="tool" AutomationProperties.AutomationId="open_terminal" ToolTip.Tip="Внешний терминал в корне репозитория слоя, сразу git status.">
+            <Path Classes="icon" Tag="square-terminal"/>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="2" x:Name="Zones" ColumnDefinitions="*,9,400">
+
+      <!-- Left: the projects, the page of the section beside them, and under both the frequent operations of the mode. -->
+      <Grid Grid.Column="0" x:Name="LeftZone" RowDefinitions="*,Auto" ColumnDefinitions="Auto,*" MinWidth="700">
+        <!-- The column folded: the page 20 px from the edge and a chevron in them that opens the column. -->
+        <Border Grid.Row="0" Grid.Column="0" x:Name="SideGap" Width="20" IsVisible="False">
+          <Button x:Name="SideOpenButton" Classes="crumb" Width="20" Padding="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,10,0,0"
+                  AutomationProperties.AutomationId="side_open" ToolTip.Tip="Показать колонку проектов.">
+            <Path Classes="icon" Tag="chevron-right"/>
+          </Button>
+        </Border>
+        <Border Grid.Row="0" Grid.Column="1" Classes="frame" Padding="0">
+          <Panel>
+            <Panel x:Name="PageHost" Margin="12,10,12,12"/>
+            <TextBlock x:Name="PageNote" Classes="note" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       TextAlignment="Center" TextWrapping="Wrap" MaxWidth="560" IsVisible="False"/>
+          </Panel>
+        </Border>
+        <!-- The projects (MainWindow.Side.cs): a click makes one the project the Git commands go to, a tick marks it. Beside
+             the page in a wide window; over it in a narrow one. Last, so it lies over the page. -->
+        <Border Grid.Row="0" Grid.Column="0" x:Name="SideFrame" Classes="frame" Padding="0" Width="210" Margin="0,0,8,0" HorizontalAlignment="Left">
+          <DockPanel x:Name="SideHost"/>
+        </Border>
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Classes="card opsbar" Margin="0,8,0,0" Padding="8,7">
+          <Grid x:Name="OpsRow"/>
+        </Border>
+      </Grid>
+
+      <GridSplitter Grid.Column="1" ResizeDirection="Columns"/>
+
+      <!-- Right: the terminal - every command a button ran, exactly, with what it said and how it ended. -->
+      <Border Grid.Column="2" x:Name="RightZone" Classes="card" Padding="9,7,8,8" MinWidth="400">
+        <Grid RowDefinitions="Auto,*,Auto,Auto,Auto">
+          <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,6">
+            <TextBlock Grid.Column="0" Classes="cardtitle" Text="ТЕРМИНАЛ" VerticalAlignment="Center"/>
+            <!-- The legend of the dots, whole or not at all: a narrow terminal leaves it out rather than over its title. -->
+            <views:FitRow Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10,0,10,0" ClipToBounds="True">
+              <StackPanel x:Name="RiskLegend" Orientation="Horizontal" Spacing="10"/>
+            </views:FitRow>
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+              <Button x:Name="LogsButton" Classes="tool" Margin="0,0,4,0" ToolTip.Tip="Открыть папку logs: отчёты зеркала, проверок и журнал окна.">
+                <Path Classes="icon" Tag="file-text"/>
+              </Button>
+              <Button x:Name="CopyLogButton" Classes="tool" Margin="0,0,4,0" ToolTip.Tip="Весь текст терминала - в буфер обмена.">
+                <Path Classes="icon" Tag="copy"/>
+              </Button>
+              <Button x:Name="ClearLogButton" Classes="tool" Margin="0,0,4,0" ToolTip.Tip="Очистить терминал. Журнал окна в logs остаётся.">
+                <Path Classes="icon" Tag="eraser"/>
+              </Button>
+              <Button x:Name="WideLogButton" Classes="tool" Margin="0" ToolTip.Tip="Развернуть терминал на всё окно и вернуть обратно.">
+                <Path Classes="icon" Tag="maximize-2"/>
+              </Button>
+            </StackPanel>
+          </Grid>
+
+          <Border Grid.Row="1" Classes="listbg" CornerRadius="5"/>
+          <ScrollViewer Grid.Row="1" x:Name="LogScroll" HorizontalScrollBarVisibility="Disabled">
+            <!-- Pages of text one under another, not one text: a text is laid out whole at every
+                 line added to it. Only the last page is laid out when lines arrive. -->
+            <StackPanel x:Name="LogPages" Margin="8,6" TextElement.FontFamily="{DynamicResource FontGrid}"
+                        TextElement.FontSize="{DynamicResource FontLog}" TextElement.Foreground="{DynamicResource LogPlain}"/>
+          </ScrollViewer>
+
+          <!-- The live line of a run: what goes now, behind a dot that breathes. -->
+          <Grid Grid.Row="2" x:Name="ActivityRow" ColumnDefinitions="Auto,*" Margin="9,6,8,0" IsVisible="False">
+            <Ellipse Grid.Column="0" x:Name="ActivityDot" Classes="livedot" Margin="0,1,8,0"/>
+            <TextBlock Grid.Column="1" x:Name="ActivityText" FontFamily="{DynamicResource FontGrid}" FontSize="{DynamicResource FontLog}"
+                       Foreground="{DynamicResource LogPlain}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+          </Grid>
+
+          <!-- A command put in the line to be finished: what to put in its places. -->
+          <Border Grid.Row="3" x:Name="TemplateNote" Classes="templatenote" Margin="0,7,0,0" IsVisible="False">
+            <Grid ColumnDefinitions="Auto,*">
+              <Path Grid.Column="0" Classes="icon" Tag="info" Margin="0,0,8,0"/>
+              <TextBlock Grid.Column="1" x:Name="TemplateText" TextWrapping="Wrap"/>
+            </Grid>
+          </Border>
+
+          <!-- The command line: git, the PowerShell of the program or CMD, in the root of the repository of the layer. -->
+          <Grid Grid.Row="4" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto" Margin="0,7,0,0">
+            <ToggleButton Grid.Column="0" x:Name="ShellGit" Classes="switch" Content="GIT" Margin="0,0,4,0" AutomationProperties.AutomationId="command_shell_git"
+                          ToolTip.Tip="Строка - команда git: «status», «log --oneline» или целиком «git ...». Идёт в корне репозитория выбранного слоя."/>
+            <ToggleButton Grid.Column="1" x:Name="ShellPs" Classes="switch" Content="PS" Margin="0,0,4,0" AutomationProperties.AutomationId="command_shell_ps"
+                          ToolTip.Tip="PowerShell 7 программы (App\AudionPs.exe), в корне репозитория слоя."/>
+            <ToggleButton Grid.Column="2" x:Name="ShellCmd" Classes="switch" Content="CMD" Margin="0,0,6,0" AutomationProperties.AutomationId="command_shell_cmd"
+                          ToolTip.Tip="Командная строка Windows (cmd.exe) в кодировке UTF-8, в корне репозитория слоя."/>
+            <TextBox Grid.Column="3" x:Name="CommandBox" Classes="masks" Height="24" MinHeight="24" Padding="8,0" VerticalContentAlignment="Center"
+                     FontFamily="{DynamicResource FontGrid}" AutomationProperties.AutomationId="command_box"
+                     ToolTip.Tip="Команда: Enter запускает, стрелки - прежние команды. Опасные команды окно спросит."/>
+            <Button Grid.Column="4" x:Name="CommandHistoryButton" Classes="tool" Margin="4,0,0,0" AutomationProperties.AutomationId="command_history"
+                    ToolTip.Tip="Прежние команды: закреплённые первыми. Команду можно взять, закрепить или убрать из списка.">
+              <Path Classes="icon" Tag="history"/>
+            </Button>
+            <Button Grid.Column="5" x:Name="CommandRunButton" Classes="tool" Margin="4,0,0,0" AutomationProperties.AutomationId="command_run"
+                    ToolTip.Tip="Выполнить команду (Enter). Пока идёт другая, команда ждёт своей очереди.">
+              <Path Classes="icon" Tag="play"/>
+            </Button>
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <!-- SETTINGS or ABOUT, in place of the zones; the state below stays in sight. -->
+    <Border Grid.Row="1" Grid.RowSpan="2" x:Name="SheetHost" Classes="frame" IsVisible="False">
+      <Panel>
+        <ScrollViewer x:Name="SheetScroll" Margin="22,18" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel x:Name="SheetBody" Spacing="6" MaxWidth="1120" HorizontalAlignment="Center" Margin="0,0,24,0"/>
+        </ScrollViewer>
+        <Button x:Name="SheetClose" Classes="tool" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,12,0"
+                ToolTip.Tip="Закрыть и вернуться к разделам (Esc).">
+          <Path Classes="icon" Tag="x"/>
+        </Button>
+      </Panel>
+    </Border>
+
+    <!-- The state: where the window is, the next step in plain words, and while a command goes - its clock and STOP. -->
+    <Grid Grid.Row="3" x:Name="StateRow" ColumnDefinitions="Auto,*,Auto" Margin="2,7,0,0" MinHeight="24">
+      <TextBlock Grid.Column="0" x:Name="CrumbText" Classes="status" VerticalAlignment="Center" Margin="0,0,14,0"/>
+      <StackPanel Grid.Column="1" x:Name="CoachRow" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+        <Path Classes="icon coach" Tag="lightbulb"/>
+        <TextBlock x:Name="CoachText" Classes="coach" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+      </StackPanel>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+        <TextBlock x:Name="StatusText" Classes="status" Text="Готово." VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="420"/>
+        <TextBlock x:Name="ClockText" Classes="num fact idle" VerticalAlignment="Center"/>
+        <Button x:Name="StopButton" Classes="small burn" IsVisible="False" AutomationProperties.AutomationId="stop"
+                ToolTip.Tip="Остановить идущую команду вместе со всем, что она запустила.">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Path Classes="icon" Tag="square"/>
+            <TextBlock Text="СТОП"/>
+          </StackPanel>
+        </Button>
+      </StackPanel>
+    </Grid>
+  </Grid>
+  </Grid>
+</Window>

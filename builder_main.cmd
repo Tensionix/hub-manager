@@ -30,7 +30,6 @@ goto FALLBACK_MENU
 > "%MENU_FILE%" echo [01] PYTHON ENV CMD                      ^| build_cmd        ^| main CMD build script
 >>"%MENU_FILE%" echo [02] PYTHON ENV PS                       ^| build_ps         ^| optional PowerShell builder
 >>"%MENU_FILE%" echo [03] FZF                                 ^| update_fzf       ^| install/update system_core\fzf.exe
->>"%MENU_FILE%" echo [04] POWERSHELL                          ^| install_pwsh     ^| optional pwsh for pickers/build helpers
 >>"%MENU_FILE%" echo [05] BLAKE3 INSTALL                      ^| install_blake3   ^| install/update Python blake3 package
 >>"%MENU_FILE%" echo [06] INIT FOLDERS                         ^| init_folders     ^| create managed project folders
 >>"%MENU_FILE%" echo [07] REQUIREMENTS LOCK                    ^| req_lock         ^| refresh pinned dependency lock
@@ -39,20 +38,11 @@ goto FALLBACK_MENU
 >>"%MENU_FILE%" echo [70] CLEAN INSTALL CACHE                 ^| clean_cache      ^| clean install cache/staging/bytecode
 >>"%MENU_FILE%" echo [71] VERIFY / DOCTOR                     ^| verify           ^| run doctor.py
 >>"%MENU_FILE%" echo [72] CMD ENCODING CHECK                  ^| cmd_encoding     ^| UTF-8 no-BOM CRLF
->>"%MENU_FILE%" echo [74] COLLECT RELEASE LICENSES            ^| collect_licenses ^| run collection only before release
->>"%MENU_FILE%" echo [75] PRUNE STALE LICENSE FOLDERS         ^| prune_licenses   ^| remove folders for uninstalled packages
->>"%MENU_FILE%" echo [76] DEDUPLICATE LICENSE FILES           ^| dedupe_licenses  ^| cleanup exact duplicate texts
->>"%MENU_FILE%" echo [77] MAKE RELEASE ARCHIVE                ^| release          ^| stage, refresh licenses, create zip
->>"%MENU_FILE%" echo [78] COLLECT + DEDUPE LICENSES           ^| collect_dedupe   ^| refresh release license outputs
->>"%MENU_FILE%" echo.
->>"%MENU_FILE%" echo [90] PROJECT LAUNCHER                    ^| project          ^| open runtime menu
->>"%MENU_FILE%" echo [91] TEMPLATE LEGACY CLEANER             ^| legacy_clean     ^| dry-run source/doc cleanup policy
 >>"%MENU_FILE%" echo.
 >>"%MENU_FILE%" echo [95] OPEN install                        ^| open_install     ^| explorer
 >>"%MENU_FILE%" echo [96] OPEN runtime                        ^| open_runtime     ^| explorer
 >>"%MENU_FILE%" echo [97] OPEN wheelhouse                     ^| open_wheels      ^| explorer
 >>"%MENU_FILE%" echo [98] OPEN licenses                       ^| open_licenses    ^| explorer
->>"%MENU_FILE%" echo [99] OPEN release                        ^| open_release     ^| explorer
 >>"%MENU_FILE%" echo [00] EXIT                                ^| exit             ^| close
 
 type "%MENU_FILE%" | "%FZF_EXE%" --prompt="audion@portable-builder > " --pointer=">" --header="Pick step:" --layout=reverse --border="rounded" --info=hidden --margin=1,2 > "%RES_FILE%"
@@ -67,7 +57,6 @@ call :TRIM RAW
 if /I "%RAW%"=="build_cmd" goto BUILD_CMD
 if /I "%RAW%"=="build_ps" goto BUILD_PS
 if /I "%RAW%"=="update_fzf" goto UPDATE_FZF
-if /I "%RAW%"=="install_pwsh" goto INSTALL_PWSH
 if /I "%RAW%"=="install_blake3" goto INSTALL_BLAKE3
 if /I "%RAW%"=="init_folders" goto INIT_FOLDERS
 if /I "%RAW%"=="req_lock" goto REQUIREMENTS_LOCK
@@ -75,18 +64,10 @@ if /I "%RAW%"=="install_offline" goto INSTALL_OFFLINE
 if /I "%RAW%"=="clean_cache" goto CLEAN_CACHE
 if /I "%RAW%"=="verify" goto VERIFY
 if /I "%RAW%"=="cmd_encoding" goto CMD_ENCODING
-if /I "%RAW%"=="collect_licenses" goto COLLECT_LICENSES
-if /I "%RAW%"=="prune_licenses" goto PRUNE_LICENSES
-if /I "%RAW%"=="dedupe_licenses" goto DEDUPE_LICENSES
-if /I "%RAW%"=="release" goto RELEASE
-if /I "%RAW%"=="collect_dedupe" goto COLLECT_DEDUPE_LICENSES
-if /I "%RAW%"=="project" goto PROJECT
-if /I "%RAW%"=="legacy_clean" goto LEGACY_CLEAN
 if /I "%RAW%"=="open_install" goto OPEN_INSTALL
 if /I "%RAW%"=="open_runtime" goto OPEN_RUNTIME
 if /I "%RAW%"=="open_wheels" goto OPEN_WHEELS
 if /I "%RAW%"=="open_licenses" goto OPEN_LICENSES
-if /I "%RAW%"=="open_release" goto OPEN_RELEASE
 if /I "%RAW%"=="exit" exit /b 0
 goto MAIN
 
@@ -94,7 +75,6 @@ goto MAIN
 echo [01] PYTHON ENV CMD
 echo [02] PYTHON ENV PS
 echo [03] FZF
-echo [04] POWERSHELL
 echo [05] BLAKE3 INSTALL
 echo [06] INIT FOLDERS
 echo [07] REQUIREMENTS LOCK
@@ -103,20 +83,11 @@ echo.
 echo [70] CLEAN INSTALL CACHE
 echo [71] VERIFY / DOCTOR
 echo [72] CMD ENCODING CHECK
-echo [74] COLLECT RELEASE LICENSES
-echo [75] PRUNE STALE LICENSE FOLDERS
-echo [76] DEDUPLICATE LICENSE FILES
-echo [77] MAKE RELEASE ARCHIVE
-echo [78] COLLECT + DEDUPE LICENSES
-echo.
-echo [90] PROJECT LAUNCHER
-echo [91] TEMPLATE LEGACY CLEANER
 echo.
 echo [95] OPEN install
 echo [96] OPEN runtime
 echo [97] OPEN wheelhouse
 echo [98] OPEN licenses
-echo [99] OPEN release
 echo.
 echo [00] EXIT
 echo.
@@ -133,9 +104,6 @@ if /I "%RAW%"=="build_ps" goto BUILD_PS
 if /I "%RAW%"=="03" goto UPDATE_FZF
 if /I "%RAW%"=="3" goto UPDATE_FZF
 if /I "%RAW%"=="update_fzf" goto UPDATE_FZF
-if /I "%RAW%"=="04" goto INSTALL_PWSH
-if /I "%RAW%"=="4" goto INSTALL_PWSH
-if /I "%RAW%"=="install_pwsh" goto INSTALL_PWSH
 if /I "%RAW%"=="05" goto INSTALL_BLAKE3
 if /I "%RAW%"=="5" goto INSTALL_BLAKE3
 if /I "%RAW%"=="install_blake3" goto INSTALL_BLAKE3
@@ -154,20 +122,6 @@ if /I "%RAW%"=="71" goto VERIFY
 if /I "%RAW%"=="verify" goto VERIFY
 if /I "%RAW%"=="72" goto CMD_ENCODING
 if /I "%RAW%"=="cmd_encoding" goto CMD_ENCODING
-if /I "%RAW%"=="74" goto COLLECT_LICENSES
-if /I "%RAW%"=="collect_licenses" goto COLLECT_LICENSES
-if /I "%RAW%"=="75" goto PRUNE_LICENSES
-if /I "%RAW%"=="prune_licenses" goto PRUNE_LICENSES
-if /I "%RAW%"=="76" goto DEDUPE_LICENSES
-if /I "%RAW%"=="dedupe_licenses" goto DEDUPE_LICENSES
-if /I "%RAW%"=="77" goto RELEASE
-if /I "%RAW%"=="release" goto RELEASE
-if /I "%RAW%"=="78" goto COLLECT_DEDUPE_LICENSES
-if /I "%RAW%"=="collect_dedupe" goto COLLECT_DEDUPE_LICENSES
-if /I "%RAW%"=="90" goto PROJECT
-if /I "%RAW%"=="project" goto PROJECT
-if /I "%RAW%"=="91" goto LEGACY_CLEAN
-if /I "%RAW%"=="legacy_clean" goto LEGACY_CLEAN
 if /I "%RAW%"=="95" goto OPEN_INSTALL
 if /I "%RAW%"=="open_install" goto OPEN_INSTALL
 if /I "%RAW%"=="96" goto OPEN_RUNTIME
@@ -176,8 +130,6 @@ if /I "%RAW%"=="97" goto OPEN_WHEELS
 if /I "%RAW%"=="open_wheels" goto OPEN_WHEELS
 if /I "%RAW%"=="98" goto OPEN_LICENSES
 if /I "%RAW%"=="open_licenses" goto OPEN_LICENSES
-if /I "%RAW%"=="99" goto OPEN_RELEASE
-if /I "%RAW%"=="open_release" goto OPEN_RELEASE
 if /I "%RAW%"=="00" exit /b 0
 if /I "%RAW%"=="0" exit /b 0
 if /I "%RAW%"=="exit" exit /b 0
@@ -189,10 +141,6 @@ goto MAIN
 
 :BUILD_PS
 call "%BASE_DIR%\install\Build_Portable_Env.cmd"
-goto MAIN
-
-:INSTALL_PWSH
-call "%BASE_DIR%\install\Install-Portable-PowerShell.cmd"
 goto MAIN
 
 :INSTALL_BLAKE3
@@ -230,26 +178,6 @@ call "%BASE_DIR%\install\Check-CmdEncoding.cmd" -Fix
 if not defined AUDION_NO_PAUSE pause
 goto MAIN
 
-:COLLECT_LICENSES
-call "%BASE_DIR%\system_core\license\Run-Collect-ThirdPartyLicenses.cmd"
-goto MAIN
-
-:PRUNE_LICENSES
-call "%BASE_DIR%\system_core\license\Run-Prune-Stale-ThirdPartyLicenses.cmd"
-goto MAIN
-
-:DEDUPE_LICENSES
-call "%BASE_DIR%\system_core\license\Run-Deduplicate-ThirdPartyLicenses.cmd"
-goto MAIN
-
-:RELEASE
-call "%BASE_DIR%\install\make_release_archive.cmd"
-goto MAIN
-
-:COLLECT_DEDUPE_LICENSES
-call "%BASE_DIR%\system_core\license\Run-Collect-And-Deduplicate-ThirdPartyLicenses.cmd"
-goto MAIN
-
 :OPEN_INSTALL
 start "" explorer "%BASE_DIR%\install"
 goto MAIN
@@ -265,18 +193,6 @@ goto MAIN
 :OPEN_LICENSES
 if not exist "%BASE_DIR%\licenses" mkdir "%BASE_DIR%\licenses" >nul 2>nul
 start "" explorer "%BASE_DIR%\licenses"
-goto MAIN
-
-:OPEN_RELEASE
-start "" explorer "%BASE_DIR%\release"
-goto MAIN
-
-:PROJECT
-call "%BASE_DIR%\launcher_project.cmd"
-goto MAIN
-
-:LEGACY_CLEAN
-call "%BASE_DIR%\install\cleanup_template_legacy.cmd"
 goto MAIN
 
 :TRIM

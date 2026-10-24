@@ -21,7 +21,6 @@ $excludedDirectoryNames = @(
     ".venv_latest",
     "._runtime",
     "__pycache__",
-    "data",
     "input",
     "logs",
     "node_modules",

@@ -215,3 +215,67 @@ def test_verify_projection_mirror_reports_digest_drift(tmp_path: Path) -> None:
         "missing.md": "missing",
         "same.md": "same",
     }
+
+
+# --- the borders of the mirror (audit AHM-01, AHM-02) ---
+
+def _junction(link: Path, target: Path) -> None:
+    import subprocess
+
+    subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(target)], check=True, capture_output=True)
+
+
+def test_a_junction_in_the_copy_never_carries_a_write_into_the_source(tmp_path: Path) -> None:
+    source, mirror = tmp_path / "source", tmp_path / "mirror"
+    (source / "alias").mkdir(parents=True)
+    (source / "original").mkdir()
+    (source / "alias" / "README.md").write_text("NEW FROM ALIAS\n", encoding="utf-8")
+    (source / "original" / "README.md").write_text("ORIGINAL SOURCE\n", encoding="utf-8")
+    mirror.mkdir()
+    _junction(mirror / "alias", source / "original")
+    try:
+        result = apply_projection_plan(plan_projection(source, mirror, _profile()), dry_run=False)
+        assert (source / "original" / "README.md").read_text(encoding="utf-8") == "ORIGINAL SOURCE\n"
+        assert result["summary"]["errors"] >= 1 and result["summary"]["exit_code"] == 1
+        assert any("leads out of the GIT COPY" in e["error"] for e in result["details"]["errors"])
+    finally:
+        os.rmdir(mirror / "alias")
+
+
+def test_a_junction_in_the_source_is_not_followed_out_of_it(tmp_path: Path) -> None:
+    source, mirror, outside = tmp_path / "source", tmp_path / "mirror", tmp_path / "outside"
+    source.mkdir()
+    outside.mkdir()
+    (source / "README.md").write_text("# project\n", encoding="utf-8")
+    (outside / "private-notes.md").write_text("not of the project\n", encoding="utf-8")
+    _junction(source / "notes", outside)
+    try:
+        plan = plan_projection(source, mirror, _profile())
+        assert [item["rel_path"] for item in plan["items"] if item["action"] == "copy"] == ["README.md"]
+        assert plan["summary"]["source_scan"]["links_skipped"] == 1
+        apply_projection_plan(plan, dry_run=False)
+        assert not (mirror / "notes").exists()
+    finally:
+        os.rmdir(source / "notes")
+
+
+def test_a_file_the_source_scan_cannot_read_is_never_deleted_from_the_copy(tmp_path: Path, monkeypatch) -> None:
+    source, mirror = tmp_path / "source", tmp_path / "mirror"
+    for root in (source, mirror):
+        root.mkdir()
+        (root / "README.md").write_text("# same\n", encoding="utf-8")
+    real_lstat = os.lstat
+
+    def lstat(path, *args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+        if Path(path) == source / "README.md":
+            raise PermissionError(13, "Access is denied", str(path))
+        return real_lstat(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "lstat", lstat)
+    plan = plan_projection(source, mirror, _profile())
+    assert plan["summary"]["errors"] >= 1
+    result = apply_projection_plan(plan, dry_run=False)
+    assert (mirror / "README.md").is_file(), "the copy keeps a file the source could not be read for"
+    assert result["summary"]["delete_phase_skipped"] and result["summary"]["exit_code"] == 1
+    verify = verify_projection_mirror(source, mirror, _profile())
+    assert verify["summary"]["errors"] >= 1 and verify["summary"]["exit_code"] == 1

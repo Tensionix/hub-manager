@@ -1,24 +1,25 @@
 {
   "project": "Audion Hub Manager",
-  "source_file": "E:\\TOOLS\\PROJECTS\\_incoming_gpt_image_icons\\Сгенерированное изображение 10.png",
-  "pipeline": "GPT-Image bitmap candidate saved from UI, normalized to 1024 PNG and multi-size ICO",
+  "source_file": "C:\\Users\\Audion\\Documents\\Codex\\2026-10-24\\e-tools-audit-audion-hub-manager\\outputs\\Hub_Manager_Burnt_Orange_White_Git_Concept_v1.png",
+  "pipeline": "the owner's drawing taken as is (source.png, 1254x1254, transparent corners); app.png and app.ico resampled from it by System.Drawing, HighQualityBicubic",
   "sizes": {
     "app.png": "1024x1024",
     "app.ico": [
       "16x16",
+      "20x20",
       "24x24",
       "32x32",
+      "40x40",
       "48x48",
-      "64x64",
+      "64x64 - 32-bit bitmaps",
       "128x128",
-      "256x256"
+      "256x256 - PNG"
     ]
   },
   "style_rules": [
-    "background #17212B",
-    "maximum 3 objects",
-    "no repeated objects",
-    "no text",
-    "bitmap-first"
+    "dark rounded tile",
+    "burnt orange folder",
+    "white Git branch mark",
+    "no text"
   ]
 }

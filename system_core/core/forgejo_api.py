@@ -27,22 +27,10 @@ MAX_REPO_PAGES = 20
 # Scopes follow the ROUTE, not the object being acted on: everything under
 # /api/v1/user/* is gated by the user scopes, including repository creation.
 # Git transport over HTTPS is judged separately and needs a repository scope,
-# so API access and git access require different scopes on the same token.
-SCOPE_IDENTITY = "read:user"
-SCOPE_CREATE_REPOSITORY = "write:user"
-SCOPE_READ_REPOSITORY = "read:repository"
-SCOPE_WRITE_REPOSITORY = "write:repository"
+# so API access and git access require different scopes on the same token:
+# read:user to identify the user and list repositories, write:user to create one,
+# read:repository to fetch over HTTPS, write:repository to push.
 
-# What each capability actually needs, keyed by what the user is trying to do.
-SCOPES_BY_CAPABILITY = {
-    "server_version": (),
-    "identity": (SCOPE_IDENTITY,),
-    "list_repositories": (SCOPE_IDENTITY,),
-    "create_repository": (SCOPE_CREATE_REPOSITORY,),
-    "git_over_https": (SCOPE_READ_REPOSITORY,),
-    "git_push_over_https": (SCOPE_WRITE_REPOSITORY,),
-}
-MINIMUM_SCOPES = (SCOPE_IDENTITY, SCOPE_READ_REPOSITORY)
 
 # `urlparse` keeps whatever sits in the authority, including `;`, `&` and `$(...)`.
 # These values reach `ssh -T <user>@<host>`, which the GUI runs through a shell,

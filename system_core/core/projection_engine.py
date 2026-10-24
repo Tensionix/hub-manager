@@ -19,7 +19,7 @@ from .project_registry import ProjectEntry
 from .scan_engine import (
     FileRecord,
     ScanBundle,
-    ScanStats,
+    is_link,
     scan_projection,
     scan_source,
 )
@@ -27,6 +27,12 @@ from .scan_engine import (
 
 DEFAULT_COMPARE_MODE = "metadata_then_blake3"
 
+
+
+def _dir_rule(item: object) -> str:
+    """A folder rule of a profile, normalised; a leading slash stays - it anchors the rule at the root (`/App`)."""
+    text = str(item).strip()
+    return ("/" if text.startswith(("/", "\\")) else "") + _norm_rel(text).lower()
 
 @dataclass
 class ProjectionProfile:
@@ -38,6 +44,7 @@ class ProjectionProfile:
     mirror_scope: str = "filtered"
     preserve_empty_dirs: bool = True
     marker_file: str = ".gitkeep"
+    respect_gitignore: bool = True
     max_file_bytes: int | None = 10 * 1024 * 1024
     include_globs: list[str] = field(default_factory=list)
     exclude_globs: list[str] = field(default_factory=list)
@@ -45,6 +52,8 @@ class ProjectionProfile:
     small_include_max_file_bytes: int | None = None
     hide_dirs: list[str] = field(default_factory=list)
     exclude_dir_contents: list[str] = field(default_factory=list)
+    output_dirs: list[str] = field(default_factory=list)
+    extensionless_text_bytes: int | None = None
     forbidden_dirs: list[str] = field(default_factory=list)
     protected_target_globs: list[str] = field(default_factory=list)
     dry_run_default: bool = True
@@ -64,14 +73,17 @@ class ProjectionProfile:
             mirror_scope=str(data.get("mirror_scope", "filtered")).strip().lower() or "projection_exact",
             preserve_empty_dirs=bool(data.get("preserve_empty_dirs", True)),
             marker_file=str(data.get("marker_file", ".gitkeep")),
+            respect_gitignore=bool(data.get("respect_gitignore", True)),
             max_file_bytes=data.get("max_file_bytes"),
             include_globs=[str(item) for item in data.get("include_globs", [])],
             exclude_globs=[str(item) for item in data.get("exclude_globs", [])],
             small_include_globs=[str(item) for item in data.get("small_include_globs", [])],
             small_include_max_file_bytes=data.get("small_include_max_file_bytes"),
-            hide_dirs=[_norm_rel(str(item)).lower() for item in data.get("hide_dirs", [])],
-            exclude_dir_contents=[_norm_rel(str(item)).lower() for item in data.get("exclude_dir_contents", [])],
-            forbidden_dirs=[_norm_rel(str(item)).lower() for item in data.get("forbidden_dirs", [])],
+            hide_dirs=[_dir_rule(item) for item in data.get("hide_dirs", [])],
+            exclude_dir_contents=[_dir_rule(item) for item in data.get("exclude_dir_contents", [])],
+            output_dirs=[_dir_rule(item) for item in data.get("output_dirs", [])],
+            extensionless_text_bytes=data.get("extensionless_text_bytes"),
+            forbidden_dirs=[_dir_rule(item) for item in data.get("forbidden_dirs", [])],
             protected_target_globs=[str(item) for item in data.get("protected_target_globs", [])],
             dry_run_default=bool(data.get("dry_run_default", True)),
             require_include_filter=bool(data.get("require_include_filter", True)),
@@ -132,10 +144,24 @@ def load_projection_profiles(path: Path | None = None) -> dict[str, ProjectionPr
     payload = load_json(config_path, default={"profiles": {}})
     raw_profiles = payload.get("profiles", {}) if isinstance(payload, dict) else {}
     return {
-        str(profile_id): ProjectionProfile.from_dict(str(profile_id), data)
+        str(profile_id): ProjectionProfile.from_dict(str(profile_id), _with_parent(raw_profiles, str(profile_id)))
         for profile_id, data in raw_profiles.items()
         if isinstance(data, dict)
     }
+
+
+def _with_parent(raw_profiles: dict[str, Any], profile_id: str, seen: tuple[str, ...] = ()) -> dict[str, Any]:
+    """A profile with `extends` is its parent with its own keys laid over: the strict twin of the project profile
+    repeats none of its masks."""
+    data = raw_profiles[profile_id]
+    parent = str(data.get("extends", "")).strip()
+    if not parent:
+        return data
+    if parent in seen or parent == profile_id or not isinstance(raw_profiles.get(parent), dict):
+        raise ValueError(f"Projection profile '{profile_id}' extends {parent!r}, which is missing or circular")
+    merged = dict(_with_parent(raw_profiles, parent, seen + (profile_id,)))
+    merged.update({key: value for key, value in data.items() if key != "extends"})
+    return merged
 
 
 def get_projection_profile(profile_id: str, path: Path | None = None) -> ProjectionProfile:
@@ -312,6 +338,12 @@ def plan_projection(source: Path, projection: Path, profile: ProjectionProfile) 
 
         items.append({"action": "copy", "reason": "content_or_metadata_diff", "rel_path": rel, "source": src.to_json(), "target": dst.to_json()})
 
+    # A side not read whole is no ground for deleting: a file the scan could not read looks like a file gone. An error of
+    # the plan keeps the delete phase from running.
+    for side, bundle in (("source", source_bundle), ("projection", target_bundle)):
+        for problem in bundle.errors:
+            items.append({"action": "error", "reason": f"{side}_unreadable: {problem['error']}", "rel_path": problem["rel_path"], "source": None, "target": None})
+
     source_dirs = source_bundle.dirs if profile.preserve_empty_dirs else _dirs_for_included_files(source_bundle.files)
     plan = {
         "action": "projection_plan",
@@ -331,11 +363,28 @@ def plan_projection(source: Path, projection: Path, profile: ProjectionProfile) 
 # ---------------------------------------------------------------------------
 
 
+def _inside(root: Path, path: Path) -> bool:
+    """Whether the place a path really leads to - junctions and links on the way resolved - lies under root."""
+    try:
+        path.resolve().relative_to(root)
+        return True
+    except (ValueError, OSError):
+        return False
+
+
+def _folders_bottom_up(root: Path) -> list[Path]:
+    """The folders under root, the deepest first, without going through a junction or a link."""
+    found: list[Path] = []
+    for dirpath, dirnames, _filenames in os.walk(root):
+        dirnames[:] = [name for name in dirnames if not is_link(Path(dirpath) / name)]
+        found.append(Path(dirpath))
+    return found[::-1]
+
+
 def _remove_obsolete_empty_dirs(projection: Path, allowed_dirs: set[str], profile: ProjectionProfile, applied: dict[str, Any]) -> None:
     if not projection.exists():
         return
-    for dirpath, _dirnames, _filenames in os.walk(projection, topdown=False):
-        path = Path(dirpath)
+    for path in _folders_bottom_up(projection):
         if path == projection:
             continue
         rel = _rel_path(path, projection)
@@ -365,18 +414,22 @@ def ensure_gitkeep_for_empty_dirs(projection: Path, allowed_dirs: Iterable[str],
             continue
         if _protected_target_path(rel, profile) or _match_dir_rule(rel, profile.hide_dirs) or _match_dir_rule(rel, profile.forbidden_dirs):
             continue
-        (projection / rel).mkdir(parents=True, exist_ok=True)
+        if _inside(projection, projection / rel):
+            (projection / rel).mkdir(parents=True, exist_ok=True)
 
-    for dirpath, dirnames, filenames in os.walk(projection, topdown=False):
-        path = Path(dirpath)
+    for path in _folders_bottom_up(projection):
         if path == projection:
             continue
         rel = _rel_path(path, projection)
         if rel not in allowed:
             continue
         marker = path / profile.marker_file
-        real_files = [name for name in filenames if name != profile.marker_file]
-        real_dirs = [name for name in dirnames if name]
+        try:
+            names = list(os.scandir(path))
+        except OSError:
+            continue
+        real_files = [entry.name for entry in names if not entry.is_dir() and entry.name != profile.marker_file]
+        real_dirs = [entry.name for entry in names if entry.is_dir()]
         if not real_files and not real_dirs:
             if not marker.exists():
                 marker.write_text("", encoding="utf-8")
@@ -437,10 +490,27 @@ def apply_projection_plan(plan: dict[str, Any], *, dry_run: bool = False) -> dic
                 applied["skipped"].append({"rel_path": item.get("rel_path"), "action": action})
         applied["gitkeep"] = {"created": [], "removed": [], "kept": [], "dry_run": True, "allowed_dirs": len(allowed_dirs)}
     else:
+        # Every place written, touched or deleted is checked where it really leads: a junction or a link inside the
+        # GIT COPY would carry the write out of it - into the SOURCE, once. The same for every file read from the SOURCE.
+        def target(rel: str) -> Path:
+            dst = projection / rel
+            if is_link(dst) or not _inside(projection, dst):
+                raise PermissionError(f"leads out of the GIT COPY through a junction or a link: {rel}")
+            return dst
+
+        def origin(rel: str, abs_path: str | None) -> Path:
+            src = Path(abs_path) if abs_path else source_root / rel
+            if is_link(src) or not _inside(source_root, src):
+                raise PermissionError(f"leads out of the SOURCE through a junction or a link: {rel}")
+            return src
+
         projection.mkdir(parents=True, exist_ok=True)
         for rel in sorted(allowed_dirs):
             if rel:
-                (projection / rel).mkdir(parents=True, exist_ok=True)
+                try:
+                    target(rel).mkdir(parents=True, exist_ok=True)
+                except OSError as exc:
+                    applied["errors"].append({"rel_path": rel, "error": f"{exc.__class__.__name__}: {exc}"})
 
         # Phase 1: copy/update only.
         for item in items:
@@ -449,8 +519,8 @@ def apply_projection_plan(plan: dict[str, Any], *, dry_run: bool = False) -> dic
             rel = _norm_rel(item.get("rel_path", ""))
             try:
                 src_info = item.get("source") or {}
-                src = Path(src_info.get("abs_path", source_root / rel))
-                dst = projection / rel
+                src = origin(rel, src_info.get("abs_path"))
+                dst = target(rel)
                 _safe_copy2(src, dst)
                 applied["copied"].append({"rel_path": rel, "size": int(src_info.get("size", 0))})
             except Exception as exc:
@@ -463,7 +533,7 @@ def apply_projection_plan(plan: dict[str, Any], *, dry_run: bool = False) -> dic
             rel = _norm_rel(item.get("rel_path", ""))
             try:
                 src_info = item.get("source") or {}
-                dst = projection / rel
+                dst = target(rel)
                 if dst.exists():
                     mtime_ns = int(src_info.get("mtime_ns", 0))
                     os.utime(dst, ns=(mtime_ns, mtime_ns))
@@ -500,7 +570,7 @@ def apply_projection_plan(plan: dict[str, Any], *, dry_run: bool = False) -> dic
                     continue
                 rel = _norm_rel(item.get("rel_path", ""))
                 try:
-                    dst = projection / rel
+                    dst = target(rel)
                     if dst.exists() and dst.is_file():
                         size = dst.stat().st_size
                         dst.unlink()
@@ -567,6 +637,11 @@ def verify_projection_mirror(source: Path, projection: Path, profile: Projection
     errors = 0
     total_source_bytes = 0
     total_target_bytes = 0
+    # A side not read whole is not verified: a file the scan could not read is neither "the same" nor "missing".
+    for side, bundle in (("source", source_bundle), ("projection", target_bundle)):
+        for problem in bundle.errors:
+            errors += 1
+            items.append({"action": "error", "reason": f"{side}_unreadable: {problem['error']}", "rel_path": problem["rel_path"], "source": None, "target": None})
 
     for rel in sorted(set(source_bundle.files) | set(target_bundle.files)):
         src_record = source_bundle.files.get(rel)
@@ -652,6 +727,3 @@ def write_report(kind: str, payload: dict[str, Any], *, project_id: str | None =
     return path
 
 
-# Compatibility alias: earlier drafts and tests used this name.
-def build_projection_plan(source: Path, projection: Path, profile: ProjectionProfile) -> dict[str, Any]:
-    return plan_projection(source, projection, profile)

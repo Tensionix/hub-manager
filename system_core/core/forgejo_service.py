@@ -79,20 +79,6 @@ def load_hosts(config_dir: Path) -> list[ForgejoHost]:
     return forgejo_api.hosts_from_config(load_hosts_payload(config_dir))
 
 
-def active_host(config_dir: Path, host_id: str = "") -> ForgejoHost | None:
-    payload = load_hosts_payload(config_dir)
-    hosts = forgejo_api.hosts_from_config(payload)
-    if not hosts:
-        return None
-    wanted = str(host_id or payload.get("active_host_id", "")).strip()
-    if wanted:
-        for host in hosts:
-            if host.id == wanted:
-                return host
-    enabled = [host for host in hosts if host.enabled]
-    return enabled[0] if enabled else hosts[0]
-
-
 def upsert_host(config_dir: Path, host: ForgejoHost, *, make_active: bool = True) -> dict[str, Any]:
     """Insert or update one host record and persist the file."""
     payload = load_hosts_payload(config_dir)

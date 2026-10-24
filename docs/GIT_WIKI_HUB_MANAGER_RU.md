@@ -1,939 +1,266 @@
-# GIT_WIKI_HUB_MANAGER - карта Audion Hub Manager
+# Audion Hub Manager — Git без заучивания команд
+
+[English](GIT_WIKI_HUB_MANAGER_EN.md) · [О программе](README_RU.md) · [Руководство](USER_GUIDE_RU.md) · [Консольная команда](CLI_RU.md)
 
 **Содержание**
 
-- [1. Главная модель](#1-главная-модель)
-- [2. Локальная база и основные конфиги](#2-локальная-база-и-основные-конфиги)
-- [3. Реестр проектов](#3-реестр-проектов)
-- [4. Профили MIRROR](#4-профили-mirror)
-- [5. Общая раскладка окна](#5-общая-раскладка-окна)
-- [6. Header](#6-header)
-- [7. Левая панель Control](#7-левая-панель-control)
-- [8. Structure tree](#8-structure-tree)
-- [9. Inspector: Quick](#9-inspector-quick)
-- [10. Inspector: Basket](#10-inspector-basket)
-- [11. Inspector: Branch](#11-inspector-branch)
-- [12. Inspector: Remote](#12-inspector-remote)
-- [13. Inspector: Editor](#13-inspector-editor)
-- [14. Inspector: Reader](#14-inspector-reader)
-- [15. Inspector: Diff](#15-inspector-diff)
-- [16. Inspector: History](#16-inspector-history)
-- [17. Inspector: Details](#17-inspector-details)
-- [18. Inspector: Storage и Safety](#18-inspector-storage-и-safety)
-- [19. Terminal / command dock](#19-terminal--command-dock)
-- [20. GitHub/GitLab remote workflow](#20-githubgitlab-remote-workflow)
-- [21. MIRROR и обслуживание конфигов](#21-mirror-и-обслуживание-конфигов)
-- [22. Подробная карта Git-work функций](#22-подробная-карта-git-work-функций)
-- [23. Провисающие места и пропущенные частые команды](#23-провисающие-места-и-пропущенные-частые-команды)
-- [24. Рекомендуемый следующий backlog](#24-рекомендуемый-следующий-backlog)
+- [Четыре места, где живёт работа](#четыре-места-где-живёт-работа)
+- [Слова Git простыми словами](#слова-git-простыми-словами)
+- [Риск и режим кнопки](#риск-и-режим-кнопки)
+- [Канон по разделам](#канон-по-разделам)
+- [Частые положения и что делать](#частые-положения-и-что-делать)
+- [Сообщение коммита](#сообщение-коммита)
+- [Учебная лаборатория](#учебная-лаборатория)
 
-Статус: 2026-06-03.
+Каждая кнопка окна запускает настоящую команду `git` и показывает её целиком. Под командой терминал пишет простыми
+словами, что она сделала и как её отменить. Все команды программы собраны в одну таблицу — канон Git
+(`system_core\core\git_canon.py`); таблицы ниже написаны из него и всегда совпадают с тем, что делает окно.
 
-Этот документ - рабочая wiki-карта Audion Hub Manager. Здесь описаны окна,
-логические группы, команды, поля ввода, обслуживание конфигов/локальной базы,
-работа с GitHub/GitLab/Git remotes, политика аутентификации и текущие белые
-пятна программы.
+## Четыре места, где живёт работа
 
-## 1. Главная модель
-
-Audion Hub Manager связывает три слоя:
-
-```text
-Full Project / Source  ->  Hub Data / Mirror  ->  Git remotes
-                         ->  Docs view
+```
+РАБОЧАЯ ПАПКА  ──add──▶  ИНДЕКС  ──commit──▶  ИСТОРИЯ  ──push──▶  СЕРВЕР
+файлы на диске          «стол перед         коммиты на          GitHub, GitLab,
+                        коммитом»           этом компьютере     Forgejo
+      ◀──restore──           ◀──restore --staged──     ◀──pull / fetch──
 ```
 
-- `Source` - живой полный проект и источник истины.
-- `Hub Data / Mirror` - фильтрованная техническая проекция проекта. Она может
-  иметь собственный `.git` и может быть пересобрана из Source.
-- `Docs` - необязательный Markdown/text слой для чтения и внешних docs-tools.
+Раздел ИЗМЕНЕНИЯ показывает эти четыре места полосой над списком файлов: сколько изменено, сколько лежит в индексе,
+есть ли коммиты, что не отправлено. Нажатие на место показывает только его файлы или открывает его раздел.
 
-Приложение не является хранилищем паролей. Оно запускает настоящий `git` и
-полагается на внешнюю аутентификацию: SSH agent, Git Credential Manager,
-GitHub CLI, GitLab CLI, VS Code, GitKraken или уже настроенный Git.
+| Место | Что там | Туда | Обратно |
+|---|---|---|---|
+| рабочая папка | файлы, как они лежат на диске | правка файла | `git restore` — вернуть к виду из индекса |
+| индекс | то, что войдёт в следующий коммит | `git add` (F5) | `git restore --staged` (F6) |
+| история | коммиты этого компьютера | `git commit` (КОММИТ) | `git reset --soft HEAD~1` — убрать последний |
+| сервер | коммиты, которые видят другие | `git push` | отправленное отменяют `git revert`, а не переписыванием |
 
-## 2. Локальная база и основные конфиги
+## Слова Git простыми словами
 
-На текущем этапе у Hub Manager нет большой SQL-базы. Его состояние хранится в
-JSON/YAML-файлах:
+| Слово | Простыми словами |
+|---|---|
+| репозиторий | папка с историей: рядом с файлами лежит скрытая `.git` |
+| коммит | запись в истории: какие файлы стали какими, кто и зачем |
+| индекс (staging) | стол перед коммитом: на него кладут то, что войдёт в следующую запись |
+| ветка | черновик: отдельная линия работы, которая не мешает другим |
+| `main` | чистовик: главная ветка, из которой выпускают |
+| слияние (merge) | принять черновик в чистовик |
+| конфликт | две ветки поменяли одно место по-разному; Git просит выбрать |
+| remote, `origin` | сервер, куда отправляют и откуда забирают; `origin` — главный |
+| push / pull / fetch | отправить свои коммиты / забрать чужие и дописать / только узнать, что нового |
+| тег | именная метка версии на коммите: `projection-v0.1.2` |
+| stash | ящик для правок, которые мешают перейти на другую ветку |
+| HEAD | где вы сейчас: коммит, на котором стоит рабочая папка |
+| reflog | журнал перемещений HEAD: в нём находятся даже «потерянные» коммиты |
+| предложение правок (PR, MR) | просьба принять ветку в `main`; делается на сайте GitHub, GitLab или Forgejo |
 
-- `config/projects.json` - реестр проектов и активный проект.
-- `config/projection_profiles.json` - правила MIRROR и commit allowlist.
-- `config/remotes.json` - сохраненные Git remote names и URL.
-- `config/auth_profiles.json` - описание стратегии авторизации.
-- `config/storage_layout.json` - корни Manager, Hub Data, Docs и Source.
-- `config/apps.json` - общие defaults внешних приложений.
-- `config/apps.local.json` - machine-local overrides, прежде всего путь к
-  `Code.exe`.
-- `config/command_cache.json` - история и pinned manual commands.
-- `config/remote_field_cache.json` - recent values для remote form.
-- `config/gui_settings.yaml` - язык, тема и UI-настройки.
+## Риск и режим кнопки
 
-Отчеты и диагностические payload пишутся в `logs/<project_id>/` как
-датированные JSON. Workspace helpers пишутся в `workspace/`.
+У каждой кнопки точка риска и подсказка с командой, её смыслом и способом отмены.
 
-## 3. Реестр проектов
+| Риск | Значит |
+|---|---|
+| читает | ничего не меняет |
+| меняет | меняет только этот репозиторий |
+| сеть | говорит с сервером |
+| опасно | может потерять работу или переписать историю — окно спросит |
 
-Один объект `projects.json` описывает один реальный проект:
+| Режим | Значит |
+|---|---|
+| сразу | команда идёт по нажатию |
+| спросит | сначала вопрос: команда целиком, что сейчас не закоммичено и как отменить; `reset --hard` подтверждается вводом слова RESET |
+| заготовка | команда встаёт в строку терминала с отмеченными местами; её дописывают и запускают сами |
 
-- `id` - стабильный внутренний ключ.
-- `title` - название в dropdown `Project`.
-- `source_path` - живой проект. Относительные пути считаются от корня Hub
-  Manager.
-- `projection_path` - Hub Data / Mirror папка выбранного проекта.
-- `docs_path` - необязательная Docs папка.
-- `profile` - id профиля из `projection_profiles.json`.
-- `default_branch` - ветка для push/pull/branch defaults.
-- `docs_app_name`, `docs_file` - legacy/docs integration поля.
-- `vscode_workspace` - workspace, который открывается вместо `source_path`,
-  если поле заполнено.
-- `notes` - свободная заметка.
+Переключатель ОБЪЯСНЯТЬ в заголовке окна включает строку под каждой командой терминала: что она сделала и как её
+отменить. Когда станет привычно, его выключают.
 
-Кнопки выбора папки в `Structure` могут записывать Project/GIT COPY/Docs пути
-обратно в `projects.json`. Пути внутри дерева менеджера сохраняются
-относительно, внешние пути остаются абсолютными.
+## Канон по разделам
 
-## 4. Профили MIRROR
+Места в командах: `‹path›` и `‹paths›` — файлы, `‹commit›` — коммит, `‹branch›` — ветка, `‹new_branch›` — имя новой
+ветки, `‹remote›` — имя сервера, `‹url›` — его адрес, `‹message›` — сообщение, `‹tag›` — метка версии, `‹range›` — цепочка
+коммитов, `‹dest›` — папка клона, `‹bundle›` — файл резерва. Окно подставляет их из выбранного: файла, коммита, ветки,
+полей.
 
-`projection_profiles.json` управляет и MIRROR, и проверкой путей перед
-Hub Manager stage/commit:
+### ИЗМЕНЕНИЯ
 
-- `compare_mode` - `quick`, `safe`, `metadata_then_blake3` или strict BLAKE3.
-- `mirror` - разрешено ли удалять projection-only файлы.
-- `mirror_scope` - обычно `filtered`.
-- `preserve_empty_dirs` - создавать ли `.gitkeep` в пустых разрешенных папках.
-- `marker_file` - имя marker-файла.
-- `max_file_bytes` - лимит размера обычного разрешенного файла.
-- `include_globs` - основной allowlist файлов.
-- `exclude_globs` - исключения: секреты, бинарники, generated output.
-- `small_include_globs`, `small_include_max_file_bytes` - малые license/notice
-  исключения.
-- `hide_dirs`, `exclude_dir_contents`, `forbidden_dirs` - классы пропускаемых
-  папок.
-- `protected_target_globs` - защищенные target paths, включая `.git/**`.
-- `require_include_filter`, `min_include_globs` - защита от copy-all профиля.
-- `delete_after_successful_copy` - удаление stale target файлов пропускается,
-  если фаза copy/touch дала ошибки или конфликты.
+<!-- canon:changes -->
+| Команда | Что делает | Как отменить | Риск |
+|---|---|---|---|
+| `git status --short --branch` | Что изменено, что в индексе и насколько ветка впереди или позади remote. | Ничего не меняет. | читает · сразу |
+| `git diff -- ‹path›` | Чем файл в рабочей папке отличается от индекса: что ещё не подготовлено к коммиту. | Ничего не меняет. | читает · сразу |
+| `git diff --cached -- ‹path›` | Что из файла уже лежит в индексе и войдёт в следующий коммит. | Ничего не меняет. | читает · сразу |
+| `git diff HEAD -- ‹path›` | Все изменения файла против последнего коммита — и в индексе, и нет. | Ничего не меняет. | читает · сразу |
+| `git blame -- ‹path›` | Кто и в каком коммите написал каждую строку файла. | Ничего не меняет. | читает · сразу |
+| `git add -- ‹paths›` | Кладёт файлы в индекс — «на стол перед коммитом». Следующий коммит возьмёт именно то, что в индексе. | Отменить: git restore --staged -- ‹файлы› | меняет · сразу |
+| `git add -- ‹paths›` | Кладёт в индекс все изменения слоя, но только файлы, которые разрешает профиль проекта: логи, сборки и секреты не попадут. | Отменить: git restore --staged -- . | меняет · сразу |
+| `git restore --staged -- ‹paths›` | Снимает файлы со стола: они остаются изменёнными в рабочей папке, но в коммит не войдут. | Отменить: git add -- ‹файлы› | меняет · сразу |
+| `git rm --cached -- ‹paths›` | Снимает файлы со стола, пока в репозитории нет ни одного коммита: из индекса они уходят, в рабочей папке остаются. | Отменить: git add -- ‹файлы› | меняет · сразу |
+| `git restore -- ‹paths›` | Возвращает файлы в рабочей папке к виду из индекса. Незакоммиченные правки этих файлов пропадут. | Отменить нельзя: этих правок нет ни в одном коммите. | опасно · спросит |
+| `git commit -m ‹message›` | Записывает в историю всё, что лежит в индексе, одним снимком с сообщением. | Отменить последний: git reset --soft HEAD~1 (файлы вернутся в индекс). | меняет · сразу |
+| `git commit --only -m ‹message› -- ‹paths›` | Коммит только отмеченных файлов, что бы ни лежало в индексе. | Отменить: git reset --soft HEAD~1 | меняет · сразу |
+| `git commit --amend -m ‹message›` | Переписывает последний коммит: новое сообщение и всё, что сейчас в индексе. Если коммит уже отправлен — история разойдётся с remote. | Отменить: git reset --soft HEAD@{1} | опасно · спросит |
+| `git tag -a ‹tag› -m ‹message›` | Ставит именную метку версии на текущий коммит. Push с --follow-tags отправит её вместе с веткой. | Отменить: git tag -d ‹тег› | меняет · сразу |
+<!-- /canon -->
 
-## 5. Общая раскладка окна
+### ИСТОРИЯ
 
-Главное окно состоит из четырех поверхностей:
+<!-- canon:history -->
+| Команда | Что делает | Как отменить | Риск |
+|---|---|---|---|
+| `git log --oneline --decorate -20` | Последние 20 коммитов по одной строке. | Ничего не меняет. | читает · сразу |
+| `git log --graph --oneline --decorate --all -50` | Граф всех веток: где разошлись и где сошлись. | Ничего не меняет. | читает · сразу |
+| `git log --date=short --pretty=format:%h%x09%ad%x09%an%x09%s -40 -- ‹path›` | История одного файла: какие коммиты его меняли. | Ничего не меняет. | читает · сразу |
+| `git reflog --date=local -20` | Журнал перемещений HEAD — спасательный круг: здесь видны даже «потерянные» коммиты. | Ничего не меняет. | читает · сразу |
+| `git show --stat ‹commit›` | Что изменил коммит: сообщение, автор, файлы. | Ничего не меняет. | читает · сразу |
+| `git tag -n --sort=-creatordate` | Все теги с подписями, новые сверху. | Ничего не меняет. | читает · сразу |
+| `git tag -a ‹tag› ‹commit› -m ‹message›` | Ставит метку версии на выбранный коммит. | Отменить: git tag -d ‹тег› | меняет · сразу |
+| `git switch -c ‹new_branch› ‹commit›` | Создаёт ветку на выбранном коммите и переходит на неё — так спасают «потерянный» коммит из reflog. | Удалить: git branch -d ‹ветка› | меняет · сразу |
+| `git revert --no-edit ‹commit›` | Делает НОВЫЙ коммит, который отменяет изменения выбранного. История не переписывается — годится и для отправленных коммитов. | Отменить: git revert ‹новый коммит› | меняет · сразу |
+| `git cherry-pick ‹commit›` | Копирует изменения выбранного коммита в текущую ветку новым коммитом. | При конфликте: git cherry-pick --abort | меняет · сразу |
+| `git reset --soft HEAD~1` | Убирает последний коммит, а его файлы оставляет в индексе: можно переписать сообщение или разбить коммит. | Отменить: git reset --soft HEAD@{1} | опасно · спросит |
+| `git reset --hard ‹commit›` | Переносит ветку на выбранный коммит и стирает ВСЕ незакоммиченные изменения рабочей папки и индекса. | Коммиты найдутся в reflog; незакоммиченное пропадёт навсегда. | опасно · спросит |
+<!-- /canon -->
 
-```text
-Left Control panel | Structure tree | Inspector tabs
-Bottom Terminal / command dock
+### ВЕТКИ
+
+<!-- canon:branches -->
+| Команда | Что делает | Как отменить | Риск |
+|---|---|---|---|
+| `git branch -vv` | Ветки, их пары на сервере и насколько они впереди или позади. | Ничего не меняет. | читает · сразу |
+| `git switch ‹branch›` | Переключает рабочую папку на другую ветку. Незакоммиченные правки Git перенесёт или откажется, если они мешают. | Вернуться: git switch - | меняет · сразу |
+| `git switch -c ‹new_branch›` | Создаёт ветку от текущего коммита и переходит на неё. | Удалить: git branch -d ‹ветка› | меняет · сразу |
+| `git switch -` | Возвращает на предыдущую ветку. | Ещё раз — обратно. | меняет · сразу |
+| `git log --left-right --graph --cherry-pick --oneline HEAD...‹branch›` | Какие коммиты есть только в текущей ветке (<) и только в выбранной (>). | Ничего не меняет. | читает · сразу |
+| `git merge --no-ff --no-edit ‹branch›` | Сливает выбранную ветку в текущую отдельным коммитом слияния — в графе видно, откуда пришла работа. | При конфликте: git merge --abort | меняет · сразу |
+| `git branch -d ‹branch›` | Удаляет слитую ветку. Неслитую Git удалить не даст. | Вернуть: git switch -c ‹ветка› ‹хэш из reflog› | меняет · сразу |
+| `git stash push -u -m ‹message›` | Откладывает все незакоммиченные правки и новые файлы в «ящик» и очищает рабочую папку. | Вернуть: git stash pop | меняет · сразу |
+| `git stash pop` | Достаёт последние отложенные правки обратно в рабочую папку. | Отложить снова: git stash push | меняет · сразу |
+| `git stash list` | Что лежит в ящике отложенного. | Ничего не меняет. | читает · сразу |
+| `git rebase -i ‹range›` | Переписывает цепочку коммитов: склеить, переставить, переименовать. Только для неотправленных коммитов. | Во время: git rebase --abort; после: через reflog. | опасно · заготовка |
+| `git merge --abort` | Прерывает слияние с конфликтами и возвращает всё как было до него. | — | меняет · сразу |
+| `git cherry-pick --abort` | Прерывает перенос коммита с конфликтами и возвращает всё как было до него. | — | меняет · сразу |
+<!-- /canon -->
+
+### СИНХРОНИЗАЦИЯ
+
+<!-- canon:sync -->
+| Команда | Что делает | Как отменить | Риск |
+|---|---|---|---|
+| `git fetch --all --prune` | Скачивает новости со всех remote, не трогая ваши ветки и файлы. Самая безопасная сетевая команда. | Ничего вашего не меняет. | сеть · сразу |
+| `git fetch --prune ‹remote›` | Узнаёт, что нового на одном сервере, не трогая ваши ветки и файлы. | Ничего вашего не меняет. | сеть · сразу |
+| `git pull --ff-only ‹remote› ‹branch›` | Забирает новые коммиты с сервера, только если их можно просто дописать сверху, без слияния. | Откажет, если ветки разошлись: тогда — ВЕТКИ, слияние. | сеть · сразу |
+| `git push --follow-tags ‹remote› ‹branch›` | Отправляет коммиты текущей ветки и теги на сервер, в её пару. Если имена разные, команда называет обе: ‹ветка›:‹пара›. | Отправленное отменяют новым коммитом (revert), а не переписыванием. | сеть · сразу |
+| `git push -u ‹remote› ‹branch›` | Отправляет новую ветку и связывает её с парой на сервере: дальше push и pull без имён. | Удалить на сервере: git push ‹remote› --delete ‹ветка› | сеть · сразу |
+| `git push --follow-tags ‹remote› ‹branch›` | Отправляет ветку и теги по очереди во все remote репозитория. | — | сеть · сразу |
+| `git remote -v` | Куда репозиторий умеет отправлять и откуда забирать. | Ничего не меняет. | читает · сразу |
+| `git remote add ‹remote› ‹url›` | Прописывает в репозиторий remote из сохранённого списка. | Убрать: git remote remove ‹имя› | меняет · сразу |
+| `git remote set-url ‹remote› ‹url›` | Меняет адрес remote, который уже есть в репозитории. | Вернуть: git remote set-url ‹имя› ‹прежний адрес› | меняет · сразу |
+| `git remote set-url --add --push ‹remote› ‹url›` | Один remote, несколько адресов отправки: забирать из одного, отправлять в несколько зеркал. | Убрать: git remote set-url --delete --push ‹remote› ‹адрес› | меняет · сразу |
+| `ssh -T -o BatchMode=yes git@github.com` | Проверяет, пускает ли GitHub по вашему SSH-ключу. | Ничего не меняет. | сеть · сразу |
+| `ssh -T -o BatchMode=yes git@gitlab.com` | Проверяет, пускает ли GitLab по вашему SSH-ключу. | Ничего не меняет. | сеть · сразу |
+| `gh run list --limit 15` | Последние прогоны GitHub Actions. | Ничего не меняет. | сеть · сразу |
+| `gh run watch` | Следит за идущим прогоном GitHub Actions до конца. | Ничего не меняет. | сеть · сразу |
+| `glab ci status` | Состояние конвейера GitLab CI. | Ничего не меняет. | сеть · сразу |
+<!-- /canon -->
+
+### ПРОЕКТЫ
+
+<!-- canon:projects -->
+| Команда | Что делает | Как отменить | Риск |
+|---|---|---|---|
+| `git clone ‹url› ‹dest›` | Скачивает репозиторий целиком в новую папку. | Удалить папку. | сеть · сразу |
+<!-- /canon -->
+
+### ОБСЛУЖИВАНИЕ
+
+<!-- canon:service -->
+| Команда | Что делает | Как отменить | Риск |
+|---|---|---|---|
+| `git init -b ‹branch›` | Создаёт пустой репозиторий (папку .git) в выбранном слое; первая ветка — ветка проекта из реестра, обычно main. | Удалить папку .git. | меняет · сразу |
+| `git rev-parse --show-toplevel` | Корень репозитория, в котором идут команды. | Ничего не меняет. | читает · сразу |
+| `git bundle create ‹bundle› ‹branch› --tags` | Вся история ветки и теги одним файлом — резерв без сервера. Поднимается командой git clone ‹файл›. | Удалить файл. | меняет · сразу |
+| `git clean -nd` | Показывает, какие неотслеживаемые файлы удалил бы git clean. Сам ничего не удаляет. | Ничего не меняет. | читает · сразу |
+| `git gc` | Уплотняет базу репозитория. Безопасно. | — | меняет · сразу |
+| `git fsck --full` | Проверяет целостность базы репозитория. | Ничего не меняет. | читает · сразу |
+| `git config --list --show-origin` | Все настройки Git и из какого файла каждая. | Ничего не меняет. | читает · сразу |
+| `git config --show-origin --get-regexp user\.` | Под каким именем и почтой будут подписаны коммиты. | Ничего не меняет. | читает · сразу |
+<!-- /canon -->
+
+## Частые положения и что делать
+
+**Сохранить работу.** ИЗМЕНЕНИЯ: отметить файлы пробелом, F5 — в индекс, внизу тема коммита, КОММИТ (Ctrl+Enter).
+Файлы вне профиля проекта в индекс не идут — так в историю не попадают сборки, логи и секреты.
+
+**Закоммитил не то, ещё не отправил.** ИСТОРИЯ → «убрать последний (soft)»: коммит уходит, файлы остаются в индексе;
+поправить и закоммитить снова. Или галочка «исправить прошлый (--amend)» в блоке КОММИТ.
+
+**Испортил файл, нужен вид из последнего коммита.** ИЗМЕНЕНИЯ → «вернуть» (F8). Окно спросит: правки этого файла
+пропадут навсегда.
+
+**Плохой коммит уже на сервере.** ИСТОРИЯ → выбрать коммит → revert. Появится новый коммит, который отменяет
+изменения выбранного; история не переписывается, другие ничего не теряют.
+
+**Потерял коммит после reset.** ИСТОРИЯ → вкладка REFLOG, выбрать коммит, вписать имя ветки внизу → «ветка отсюда».
+
+**Слияние остановилось на конфликте.** В ИЗМЕНЕНИЯХ файлы с буквой U: поправить их, F5 — в индекс, КОММИТ. Передумали —
+ВЕТКИ → «если застряли» → `git merge --abort`, всё вернётся как было до слияния.
+
+**pull отказал: ветки разошлись.** ВЕТКИ: выбрать ветку сервера (`origin/main`) → «влить в текущую», разобрать конфликт,
+если будет, затем PUSH. Программа нарочно забирает только перемоткой (`pull --ff-only`): слияние вы делаете сами и
+видите.
+
+**Правки мешают перейти на другую ветку.** ВЕТКИ → «отложить» (stash), перейти, поработать, вернуться, «достать».
+
+**Выпустить версию.** Блок КОММИТ: серия (`projection`), окно предложит следующий номер по тегам серии; patch, minor или
+major; галочка «поставить тег». После коммита — PUSH: `--follow-tags` отправит тег вместе с веткой.
+
+**Резерв без сервера.** ОБСЛУЖИВАНИЕ → `git bundle create`: вся история ветки и теги одним файлом. Поднимается командой
+`git clone ‹файл›`.
+
+**Новая ветка для задачи.** ВЕТКИ: имя внизу (`feature/отчёт`) → «создать и перейти». Первый push — `push -u`: он свяжет
+ветку с парой на сервере, дальше push и pull без имён.
+
+## Сообщение коммита
+
+Блок КОММИТ собирает сообщение из частей и показывает его целиком в рамке:
+
+```
+тип(область): серия версия - тема
+docs(readme): projection v0.1.3 - раздел о зеркале
 ```
 
-Splitter меняет ширину левой панели, дерева, Inspector и высоту терминала.
-Inspector содержит вкладки:
-
-```text
-Quick  | Branch | Editor | Diff    | Storage
-Remote | Basket | Reader | History | Details
-```
-
-Каждый заголовок вкладки начинается с Material-иконки. Tabs и command buttons
-имеют tooltips с задержкой появления 1200 ms и hide/fade 80 ms.
-
-Safety находится внутри зоны Storage. Текущий выбранный путь показывается в
-правом верхнем углу Inspector.
-
-## 6. Header
-
-Header показывает:
-
-- название приложения;
-- счетчики Git status: staged, modified, untracked, conflict, changed;
-- переключатель вида счетчиков: words/icons/letters;
-- выбор темы;
-- переключение языка.
-
-Счетчики обновляются после Git status операций.
-
-## 7. Левая панель Control
-
-### Project
-
-Dropdown `Project` выбирает активную запись из `projects.json`. Это переключает
-сразу весь комплект:
-
-```text
-source_path
-projection_path
-docs_path
-profile
-default_branch
-```
-
-### Open
-
-- `Open Project` - открыть Source в файловом менеджере.
-- `Mirror` - открыть projection root.
-- `Docs Folder` - открыть Docs root.
-- `Open in VS Code` - открыть `vscode_workspace`, если он задан, иначе Source.
-- `Terminal` - открыть внешний терминал в Source и выполнить
-  `git status --short`.
-- `Git` - открыть внешний терминал в текущем Git-root и выполнить
-  `git status --short`.
-
-### MIRROR
-
-Опции:
-
-- `Dry-run` - `Apply MIRROR` показывает действия без записи файлов.
-- `Exact mirror` - включает mirror-поведение активного профиля.
-- `.gitkeep dirs` - сохраняет пустые разрешенные папки marker-файлами.
-- `BLAKE3 compare` - включает strict BLAKE3 сравнение; без него режим быстрый.
-
-Команды:
-
-- `Preview MIRROR` - строит план Source -> Mirror и пишет report.
-- `Apply MIRROR` - применяет текущий план, учитывая `Dry-run`.
-- `Refresh` - обновляет Git status и дерево.
-
-### SOURCE ACTIONS
-
-Операции по реестру проектов или общему Source-контейнеру:
-
-- `Rebuild dropdown` - выбрать папку, просканировать вложенные project roots и
-  добавить недостающие записи в `projects.json`.
-- `Clone Source` - поставить в command area шаблон `git clone <url> <dest>`.
-- `Batch Preview MIRROR` - построить MIRROR plan для всех проектов.
-- `Batch Safety Scan` - просканировать Source всех проектов на секреты и
-  тяжелые файлы.
-- `Batch Verify Mirror` - read-only digest verification Source/Mirror для всех
-  проектов.
-- `Batch Git status` - собрать Git status по всем Source и обновить `SOURCE`
-  badge.
-- `Combined workspace` - создать общий `.code-workspace` для всех проектов.
-
-### PROJECT ACTIONS
-
-Операции над текущим выбранным объектом дерева:
-
-- `Refresh tree` - перестроить дерево.
-- `Load selected to Editor` - открыть выбранный `.md`, `.markdown`, `.txt`,
-  `.rst` во встроенном Editor.
-- `Open in VS Code` - открыть выбранный файл/папку.
-- `Copy relative path` - скопировать путь относительно текущего root.
-- `Copy full path` - скопировать абсолютный путь.
-
-### Support
-
-- `Auth Doctor` - диагностика Git/auth/remotes.
-- `BLAKE3` - проверка hash backend.
-- `Verify Mirror` - read-only сверка Source/Mirror.
-- `Storage` - проверка корней и разделения ролей.
-- `Safety Scan` - проверка текущего root на секреты/тяжелые файлы.
-- `Clean projects.json` - удалить из реестра битые Source и дубликаты. Папки не
-  удаляются.
-
-## 8. Structure tree
-
-Переключатели слоя:
-
-- `PROJECT` - `source_path` активного проекта.
-- `MIRROR` - `projection_path`.
-- `DOCS` - `docs_path`.
-
-Иконки папок выбирают новое расположение слоя. Clear locations удаляет
-сохраненные overrides из project config.
-
-Фильтры:
-
-- `View`: `Full Tree`, `Changed Only`, `Staged`, `Untracked`, `Conflicts`.
-- `Search`: фильтр по label/path.
-- `Hide clean`: скрывает clean nodes, если есть Git status map.
-- `Show hidden`: показывает скрытые entries.
-- `Top level scan`: оставляет lazy top-level дерево при поиске.
-
-Поведение дерева:
-
-- Single click выбирает путь и обновляет Details/Diff preview.
-- Double click открывает поддержанный текстовый файл в Editor или файл в VS Code.
-- Цветовые dots и summary letters идут из `git status --porcelain=v1 -b`.
-
-## 9. Inspector: Quick
-
-`Quick` - частые локальные и selected-path команды. Часть кнопок выполняет
-Python handler, часть кладет точный текст в manual command area.
-
-### GIT LOCAL
-
-- `git init` - queued `git init`.
-- `git status` - refresh status.
-- `git root` - queued `git rev-parse --show-toplevel`.
-- `git log --oneline` - queued `git log --oneline --decorate -20`.
-- `git reflog` - queued `git reflog --date=local -20`.
-
-### GIT DIFF
-
-Поля по возможности получают selected path:
-
-- `git diff -- <path>`.
-- `git diff --cached -- <path>`.
-- `git blame -- <path>`.
-- `git show --stat <commit>`.
-
-### GIT SELECTED PATH
-
-- `git add -- <path>`.
-- `git restore --staged -- <path>`.
-- `git restore -- <path>`.
-- `add active project` - stage `.` в активном Mirror root после profile check.
-- `basket + selected` - добавить selected path в Basket.
-- `Copy relative path` - скопировать selected path.
-
-### GIT BACKUP / MAINTENANCE
-
-- `git bundle create` - queued bundle в `backup/checkpoint.bundle`.
-- `git clean preview` - queued `git clean -nd`.
-- `git gc` - queued `git gc`.
-- `git fsck` - queued `git fsck --full`.
-- `git config list` - queued `git config --list --show-origin`.
-
-### GIT ADVANCED - DANGER
-
-- `git reset --hard <commit>` - visible template; при запуске через command
-  runner блокируется danger filter.
-- `git reset --soft HEAD~1` - soft rewind template.
-
-### CI/CD status
-
-Показывается только если найдены CLI:
-
-- `gh run list`.
-- `gh run watch`.
-- `glab ci status`.
-
-### Command cache
-
-- Pinned/history selects копируют exact command в manual command area.
-- Pin/unpin/delete/clear обслуживают `config/command_cache.json`.
-- `Run` выполняет ровно текст из command area.
-
-Danger filter блокирует команды, содержащие:
-
-```text
-reset --hard
-clean -fd
-push --force
-rm -rf
-rmdir /s
-del /s
-```
-
-## 10. Inspector: Basket
-
-Basket готовит читаемые commits и checkpoint tags.
-
-Поля:
-
-- `type`: `docs`, `code`, `fix`, `ui`, `test`, `chore`, `audit`.
-- `Scope`: optional conventional commit scope.
-- `Subject`: тема коммита.
-- `version_series`: по умолчанию `projection`.
-- `version_value`: semver, например `v0.1.0`.
-- `bump`: `patch`, `minor`, `major`.
-- `tag_head_field`: generated tag, read-only.
-- `Commit message`: generated или ручное сообщение.
-
-Правило сообщения:
-
-```text
-<type>(<scope>): <series> <version> - <subject>
-```
-
-Если `Subject` пустой, используется вручную введенный `Commit message`.
-
-Команды:
-
-- `next version` - ищет tags `<series>-v*` и повышает последнюю semver.
-- `git tag HEAD` - создает annotated tag на HEAD с generated message.
-- `Update message` - пересобирает commit message из полей.
-- `basket clear` - очищает in-memory basket.
-- `add active project` - stages active Mirror root.
-- `git add -- basket` - stages basket paths.
-- `git restore --staged -- basket` - unstages basket paths.
-- `git commit --only -- basket` - commits only basket paths.
-- `git commit -m` - commits currently staged paths.
-
-Basket привязан к текущему Git root. При смене root он очищается, чтобы не
-смешивать репозитории. Stage/commit проверяют активный projection profile и
-блокируют paths вне Hub allowlist.
-
-## 11. Inspector: Branch
-
-Branch содержит branch switching, compare, integration и stash.
-
-### branch status
-
-- `git status` - refresh status.
-- `git branch -vv` - queued tracking view.
-- `git log --graph` - graph log across all refs.
-- `git fetch --all --prune` - fetch/prune remote tracking refs.
-
-### git branch / tag
-
-- `git switch <branch>`.
-- `git switch -c <new branch>`.
-- `git tag version` - queued annotated tag command из Basket version fields.
-- `git tag -n` - tag list по creator date.
-
-### merge
-
-- `git log --left-right --graph --cherry-pick --oneline HEAD...<branch>`.
-- `git revert <commit>`.
-- `git merge --no-ff <branch>`.
-- `git cherry-pick <commit>`.
-
-### git stash
-
-- `git stash push -u -m <message>`.
-- `git stash pop`.
-- `git stash list`.
-
-### branch danger
-
-- `git rebase -i <revision range>`.
-- `git merge --abort`.
-- `git cherry-pick --abort`.
-
-Это visible templates: оператор видит точную команду и может ее отредактировать.
-
-## 12. Inspector: Remote
-
-Remote отвечает за remotes, push/pull/fetch и auth setup.
-
-Поля remote form:
-
-- `Platform`: `GitHub`, `GitLab`, `Codeberg`.
-- `Remote name`: имя Git remote. Если пусто при save, станет
-  `hidden_<platform>`.
-- `Login / group`: owner/group path.
-- `Repository`: repo name. Хвост `.git` снимается при build URL.
-- `Remote URL`: явный URL. Если заполнен, он важнее generated URL.
-- Recent selects для names, owners, repos, URLs.
-- Use buttons применяют recent values явно, без автоматического наложения.
-
-Generated SSH URL:
-
-```text
-git@github.com:<owner>/<repo>.git
-git@gitlab.com:<owner>/<repo>.git
-git@codeberg.org:<owner>/<repo>.git
-```
-
-Remote commands:
-
-- `git push origin` - queued `git push --follow-tags origin <default_branch>`.
-- `git pull --ff-only` - queued `git pull --ff-only origin <default_branch>`.
-- `git fetch --all --prune` - runs fetch/prune и refresh status.
-- `git remote -v` - показывает repo remotes.
-- `git push all remotes` - Python перечисляет `git remote` и пушит
-  `--follow-tags` в каждый remote последовательно.
-- `git apply remotes.json` - добавляет или обновляет enabled remotes из
-  `config/remotes.json`.
-- `git origin push URLs` - настраивает `origin` с несколькими push URLs из
-  enabled remotes.
-- `build URL` - записывает generated SSH URL в `Remote URL`.
-- `save remote` - пишет/обновляет enabled record в `config/remotes.json` и
-  обновляет `remote_field_cache.json`.
-
-Auth tools:
-
-- `Check Auth` - Auth Doctor.
-- `git config user` - queued `git config --show-origin --get-regexp user\.`
-- `ssh -T GitHub` - non-interactive SSH probe `git@github.com`.
-- `ssh -T GitLab` - non-interactive SSH probe `git@gitlab.com`.
-- `gh auth login` - внешний терминал.
-- `glab auth login` - внешний терминал.
-- `Windows Credentials` - Windows Credential Manager.
-- `GitKraken folder` - открыть текущий Git root folder.
-- `VS Code` - открыть активный проект в VS Code.
-
-Auth Doctor проверяет Git, global Git identity, `gh`, `glab`, SSH hosts,
-repo remotes, URL types/providers и optional `git ls-remote` по enabled remotes.
-
-## 13. Inspector: Editor
-
-Поддержанные расширения:
-
-```text
-.md
-.markdown
-.txt
-.rst
-```
-
-Toolbar:
-
-- Load selected.
-- Save.
-- Paste from Windows clipboard.
-- Copy editor text.
-- Clear editor text.
-- Open current file in VS Code.
-- Expand/collapse panel.
-
-Save пишет UTF-8 только по явному действию пользователя и обновляет tree.
-
-## 14. Inspector: Reader
-
-Reader - общая зона summary. Сюда попадают MIRROR summaries, Git status,
-Auth Doctor summary, Storage summary и batch command summaries.
-
-## 15. Inspector: Diff
-
-Команды:
-
-- `Unstaged`: `git diff -- <selected path>`.
-- `Staged`: `git diff --cached -- <selected path>`.
-- `HEAD`: `git diff HEAD -- <selected path>`.
-- `Copy patch`: копирует current diff text.
-
-Diff рисуется как RedLine view: line numbers, hunks, additions, removals,
-metadata lines.
-
-## 16. Inspector: History
-
-Команды:
-
-- `Selected path`: `git log --date=short --pretty=... -40 -- <path>`.
-- `Repository`: repo log, last 50 commits.
-- `Graph`: `git log --graph --oneline --decorate --all -50`.
-- `Tags`: `git tag -n --sort=-creatordate`.
-- `Copy history`: копирует current history text.
-
-## 17. Inspector: Details
-
-Details показывает:
-
-- project;
-- tree scope;
-- relative/full path;
-- Git status;
-- file/dir/missing type;
-- size;
-- modified time;
-- Git blob metadata, если доступна.
-
-Команды:
-
-- Refresh.
-- Copy JSON.
-- Open in VS Code.
-
-## 18. Inspector: Storage и Safety
-
-Storage commands:
-
-- `Check layout` - проверить Manager, Hub Data, Docs и full projects roots.
-- `Scan projects` - просканировать выбранную parent folder и импортировать
-  project entries.
-- `Generate workspace` - создать `.code-workspace` для current project layers.
-- `Copy JSON` - скопировать storage payload.
-- `Open workspace` - открыть generated workspace.
-
-External tools:
-
-- `VS Code executable` - machine-local путь к Code.exe.
-- `Pick` - file picker.
-- `Save` - записать в `config/apps.local.json`.
-- `Test` - проверить/запустить resolved VS Code command.
-
-Safety commands:
-
-- `Scan current root` - поиск secret-like files, embedded tokens, private keys,
-  heavy extensions и large files.
-- `Copy JSON` - скопировать safety payload.
-
-Safety пропускает generated/runtime dirs: `.git`, `.venv`, `runtime`,
-`wheelhouse`, `node_modules`, `logs`, `output`, `backup`, `release`, `report`,
-`temp`, `tmp` и похожие.
-
-## 19. Terminal / command dock
-
-Нижний dock содержит:
-
-- terminal log;
-- manual command input;
-- `Run`;
-- `Clear`;
-- terminal toolbar: clear/expand.
-
-Manual commands запускаются в current Git root, если он есть, иначе в manager
-root. Output стримится в terminal dock. Команда добавляется в history, если не
-заблокирована danger filter.
-
-## 20. GitHub/GitLab remote workflow
-
-Рекомендуемый SSH-flow:
-
-1. Настроить SSH keys вне Hub Manager.
-2. Проверить `ssh -T GitHub` и `ssh -T GitLab`.
-3. Заполнить `Platform`, `Remote name`, `Login / group`, `Repository`.
-4. Нажать `build URL`.
-5. Нажать `save remote`.
-6. Нажать `git apply remotes.json`.
-7. Проверить `git remote -v`.
-8. Использовать `git fetch --all --prune` для безопасного remote tracking
-   update.
-9. После commit/tag использовать `git push origin` или `git push all remotes`.
-
-Для HTTPS использовать Git Credential Manager, GitHub CLI или GitLab CLI.
-Remote URL должен быть чистым:
-
-```text
-Good: https://gitlab.com/user/repo.git
-Bad:  https://username:TOKEN@gitlab.com/user/repo.git
-```
-
-`origin push URLs` полезен, когда fetch/pull должен идти из одного canonical
-remote, а push должен публиковать в несколько mirrors.
-
-## 21. MIRROR и обслуживание конфигов
-
-Повседневное обслуживание:
-
-- `Preview MIRROR` перед реальным apply.
-- `Apply MIRROR` с `Dry-run`, если есть сомнения.
-- `Verify Mirror` после важных projection changes.
-- `Safety Scan` перед public push или release.
-- `Batch Git status` для здоровья реестра.
-- `Clean projects.json` после переносов/удалений проектов.
-- `Storage -> Check layout` после переноса Manager, Hub Data или Docs roots.
-- `BLAKE3` после пересборки portable runtime.
-
-Правила registry maintenance:
-
-- `Clean projects.json` редактирует только config.
-- Project scanner импортирует недостающие записи и пропускает duplicate sources.
-- Scanner игнорирует runtime/build/cache folders и вложенные Hub/Docs roots.
-- Storage check сообщает проблемы конфигурации, но не выдумывает новые paths.
-
-## 22. Подробная карта Git-work функций
-
-Этот раздел фиксирует именно Git-work слой: какие команды выполняются сразу,
-какие только ставятся в очередь, какие функции кода их обслуживают и какие
-guards включены.
-
-### 22.1. Где выполняются Git-команды
-
-Текущий Git root определяется функцией `current_git_root()` и равен текущему
-root дерева:
-
-```text
-PROJECT  -> source_path
-GIT COPY -> projection_path
-DOCS     -> docs_path
-```
-
-Поэтому перед запуском Quick/Branch/Remote важно проверить активный слой
-`Structure`. `add active project` является исключением: он всегда берет
-`mirror_root()` и stages активную Hub projection.
-
-### 22.2. Прямые handlers
-
-Прямые handlers сразу вызывают Python-обертки над Git:
-
-- `refresh_git()` -> `git status --porcelain=v1 -b`.
-- `stage_selected()` -> `git add -- <selected>`.
-- `unstage_selected()` -> `git restore --staged -- <selected>`.
-- `stage_active_project()` -> `git add -- .` в Mirror root после allowlist check.
-- `stage_basket()` -> `git add -- <basket paths>`.
-- `unstage_basket()` -> `git restore --staged -- <basket paths>`.
-- `commit_basket()` -> `git commit --only -m <message> -- <basket paths>`.
-- `commit_staged()` -> `git commit -m <message>`.
-- `tag_head_version()` -> `git tag -a <tag> -m <message>`.
-- `show_remotes()` -> `git remote -v`.
-- `fetch_all_remotes()` -> `git fetch --all --prune`.
-- `apply_configured_remotes()` -> add/set-url enabled remotes from
-  `config/remotes.json`.
-- `configure_origin_push_urls()` -> ensure `origin` and add push URLs from
-  enabled remotes.
-- `push_all_remotes()` -> `git remote`, then sequential
-  `git push --follow-tags <remote> <default_branch>`.
-- `show_selected_diff()` -> `git diff`, `git diff --cached` or
-  `git diff HEAD`.
-- `show_history()` -> selected path log, repo log, graph log or tags.
-
-### 22.3. Шаблоны в очереди
-
-Шаблоны в очереди вызывают `queue_git_command()`. Они заполняют command area в
-Inspector и нижний terminal command input, добавляют команду в history и ждут
-ручного `Run`.
-
-В очередь ставятся:
-
-- `git init`.
-- `git rev-parse --show-toplevel`.
-- `git log --oneline --decorate -20`.
-- `git reflog --date=local -20`.
-- `git diff -- <path>`.
-- `git diff --cached -- <path>`.
-- `git blame -- <path>`.
-- `git show --stat <commit>`.
-- `git add -- <path>`.
-- `git restore --staged -- <path>`.
-- `git restore -- <path>`.
-- `git bundle create "<backup/checkpoint.bundle>" <default_branch> --tags`.
-- `git clean -nd`.
-- `git gc`.
-- `git fsck --full`.
-- `git config --list --show-origin`.
-- `git reset --hard <commit>`.
-- `git reset --soft HEAD~1`.
-- `gh run list --limit 15`.
-- `gh run watch`.
-- `glab ci status`.
-- `git switch <branch>`.
-- `git switch -c <new branch>`.
-- `git tag -a "<tag>" -m "<message>"`.
-- `git tag -n --sort=-creatordate`.
-- `git log --left-right --graph --cherry-pick --oneline HEAD...<branch>`.
-- `git revert <commit>`.
-- `git merge --no-ff <branch>`.
-- `git cherry-pick <commit>`.
-- `git stash push -u -m "<message>"`.
-- `git stash pop`.
-- `git stash list`.
-- `git rebase -i <range>`.
-- `git merge --abort`.
-- `git cherry-pick --abort`.
-- `git push --follow-tags origin <default_branch>`.
-- `git pull --ff-only origin <default_branch>`.
-- `git config --show-origin --get-regexp user\.`
-
-### 22.4. Command runner and danger filter
-
-`run_shell_command()` runs manual commands with `shell=True`, streams stdout and
-stderr into terminal dock, writes exit code and updates status.
-
-Before execution it calls `is_dangerous_command()`. Blocked tokens:
-
-```text
-reset --hard
-clean -fd
-push --force
-rm -rf
-rmdir /s
-del /s
-```
-
-Важный нюанс: опасные команды могут быть поставлены в очередь как видимые
-templates, чтобы оператор увидел и отредактировал точную команду. Но запуск
-неизмененной опасной команды через `Run` блокируется danger filter.
-
-### 22.5. Commit profile guard
-
-Hub Manager does not blindly commit everything. Before selected/basket/Mirror
-stage/commit flows it checks paths through the active projection profile:
-
-- `commit_profile_violations()`.
-- `commit_paths_blocked_by_hub_profile()`.
-
-The check expands directories, ignores marker files like `.gitkeep`, applies
-`include_file()` from the active profile, and blocks files outside Hub allowlist.
-This protects Source and Mirror Git workflows from runtime payload, logs,
-binaries, PDFs, secrets and local config.
-
-### 22.6. Basket state machine
-
-Basket is in-memory state:
-
-- `state.commit_basket`: set of relative paths.
-- `state.commit_basket_root`: root lock.
-
-When Git root changes, `ensure_commit_basket_root()` clears the basket and
-locks it to the new root. This prevents cross-repository commits.
-
-Basket message generation:
-
-```text
-type + optional scope + version_series + version_value + subject
-```
-
-Tag generation:
-
-```text
-<slugified version_series>-<normalized semver>
-```
-
-`next version` scans existing tags with the same series prefix and bumps
-`patch`, `minor` or `major`.
-
-### 22.7. Remote config functions
-
-Remote form flow:
-
-- `remote_form_field_values()` reads platform, owner, repo and remote name.
-- `remote_url_from_identity_fields()` builds SSH URL for GitHub/GitLab/Codeberg.
-- `remote_url_from_form()` prefers explicit `Remote URL` over generated URL.
-- `build_remote_url_into_field()` fills the URL field.
-- `save_remote_config_from_fields()` validates remote name, writes
-  `config/remotes.json`, and updates recent cache.
-
-Remote application flow:
-
-- `git_apply_remotes_from_config()` reads enabled remotes and runs
-  `git remote add` or `git remote set-url`.
-- `git_configure_origin_push_urls_from_config()` ensures `origin` exists and
-  adds push URLs through `git remote set-url --add --push origin <url>`.
-- `git_push_all_remotes()` enumerates remote names with `git remote` and pushes
-  branch/tags sequentially.
-
-Remote names are limited to `[A-Za-z0-9._-]+`. Secrets in remote URLs are not
-stored by policy.
-
-### 22.8. Auth and external tools
-
-Auth Doctor uses `system_core/core/auth_doctor.py`:
-
-- `git --version`.
-- `git config --global user.name`.
-- `git config --global user.email`.
-- `gh auth status` when `gh` exists.
-- `glab auth status` when `glab` exists.
-- SSH probes for configured hosts.
-- `git remote -v` for active repo.
-- URL type/provider detection.
-- optional `git ls-remote --heads <url>` for enabled remotes without embedded
-  credentials.
-
-External setup buttons:
-
-- `gh auth login` and `glab auth login` open a visible terminal.
-- `Windows Credentials` opens Windows Credential Manager.
-- `GitKraken folder` opens the current Git root.
-- `VS Code` opens the active project.
-
-Background probes set non-interactive behavior to avoid freezing the GUI on
-password prompts.
-
-### 22.9. Diff and History functions
-
-Diff:
-
-- `show_selected_diff("unstaged")`: unstaged patch.
-- `show_selected_diff("staged")`: staged patch.
-- `show_selected_diff("head")`: difference against HEAD.
-- `copy_diff_patch()`: clipboard copy.
-
-History:
-
-- `show_history("selected")`: selected path log.
-- `show_history("repo")`: repository log.
-- `show_history("graph")`: graph across refs.
-- `show_history("tags")`: sorted annotated tag list.
-- `copy_history_text()`: clipboard copy.
-
-Selecting a tree node also triggers Details refresh and lightweight diff
-preview for changed files.
-
-### 22.10. Git-work reports and logs
-
-Git command output is streamed to the terminal dock. Structured diagnostics are
-written as JSON reports:
-
-- projection plan;
-- projection apply;
-- mirror verify;
-- BLAKE3 probe;
-- project scan;
-- projects config clean;
-- batch MIRROR/status/safety/verify payloads.
-
-Reports use `write_report(kind, payload, project_id=...)` and live under
-`logs/<project_id>/`.
-
-## 23. Провисающие места и пропущенные частые команды
-
-Программа уже закрывает большую часть everyday Git/MIRROR workflow, но видны
-следующие белые пятна.
-
-### Remote status and sync
-
-- Нет компактной таблицы ahead/behind по remote.
-- Нет кнопки `git fetch <remote> <branch>`.
-- Нет selected remote push/pull: действия в основном `origin` или all remotes.
-- Нет `git remote show <name>` inspector.
-- Нет remote-группированного отчета fetch/prune.
-- Нет UI для disable/remove saved remote из `remotes.json`.
-
-### Branch workflow
-
-- Нет branch dropdown из `git branch --all`.
-- Нет current branch badge внутри Branch pane.
-- Нет `git switch -` для возврата на предыдущую ветку.
-- Нет `git branch -d/-D <branch>` template.
-- Нет upstream setup: `git push -u origin <branch>` или
-  `git branch --set-upstream-to`.
-- Нет визуального merge/rebase state indicator, кроме raw output.
-
-### Staging and commit
-
-- В Diff нет явных selected path `stage`/`unstage` кнопок, хотя handlers в коде
-  уже есть.
-- В Basket нельзя удалить один path, только clear all.
-- Нет amend-flow: `git commit --amend`.
-- Нет commit dry-run/status preview именно для текущего basket.
-- Commit profile violations уходят в terminal, а не в компактный список Basket.
-
-### History and recovery
-
-- Reflog есть в Quick, но нет recovery helper
-  `git checkout <sha> -- <path>`.
-- Нет viewer для `git show <commit>:<path>`.
-- Нет копирования commit hash из History.
-- Нет tag delete templates, local/remote.
-
-### Auth
-
-- Auth Doctor знает URL types/providers, но UI не показывает badges рядом с
-  каждым configured remote.
-- Нет guided SSH key creation/checklist.
-- Нет отдельных `gh auth status` / `glab auth status` кнопок, они только внутри
-  Auth Doctor.
-- Нет HTTPS credential cleanup checklist, кроме открытия Windows Credentials.
-
-### Safety and release
-
-- Safety Scan не связан gate-ом с push buttons.
-- Нет release checklist command group.
-- Нет `git archive`.
-- Нет signed tag/commit option.
-
-### Storage and Docs
-
-- Docs layer открывается, но нет отдельной docs-only projection action.
-- `Sync Docs Back` отсутствует намеренно, но UI стоит явно подписать как
-  отсутствующий/небезопасный workflow.
-- Storage check показывает paths, но почти не предлагает repair actions кроме
-  picker и scanner.
-
-### UI and ergonomics
-
-- Многие commands требуют ручной `Run`: это безопасно, но медленно для частых
-  benign операций.
-- Risk commands блокируются token matching, а не typed confirmation dialog.
-- Command cache global, не per project.
-- Remote recent values global, не per provider/project.
-- Small screen layout нужно продолжать проверять скриншотами после каждой
-  правки.
-
-## 24. Рекомендуемый следующий backlog
-
-Небольшие low-risk улучшения:
-
-1. Branch dropdown из `git branch --all`.
-2. Шаблоны `git switch -` и `git push -u origin <branch>`.
-3. Selected-path stage/unstage кнопки во вкладке Diff.
-4. `basket remove selected` или кликабельные строки Basket.
-5. `remote show <name>` и `fetch selected remote`.
-6. Таблица Auth/Remote badges: name, provider, URL type, enabled,
-   configured in repo, ls-remote ok.
-7. Видимое stale Safety warning перед push.
-8. `git commit --amend` как queued command, не direct action.
-9. `git show <commit>:<path>` viewer в History/Diff.
-10. Docs-only projection action, если Docs станет активным workflow.
+| Тип | Когда |
+|---|---|
+| docs | документы, тексты |
+| code | код, новое умение |
+| fix | исправление ошибки |
+| ui | вид окна |
+| test | проверки |
+| chore | уборка, сборка, зависимости |
+| audit | разбор и проверка |
+
+Область — часть проекта (`readme`, `mirror`, `ui`), можно пусто. Серия и версия необязательны: с ними сообщение
+несёт номер, а галочка «поставить тег» ставит метку `серия-версия` на этот коммит. Номер окно предлагает следующий по тегам
+серии; patch — исправление (0.1.1 → 0.1.2), minor — новое умение (0.1 → 0.2), major — несовместимое (0 → 1).
+
+## Учебная лаборатория
+
+Десять маленьких репозиториев в известных состояниях. Их строит ПРОЕКТЫ → УЧЕБНАЯ ЛАБОРАТОРИЯ → «создать заново» или
+`hub_cli.cmd lab create --replace --register`: прежние уходят в Корзину, новые вносятся в реестр (`lab_01` … `lab_10`).
+Авторы и даты в них постоянные, поэтому коммиты получают те же хэши на любой машине. Ломайте смело.
+
+| | Репозиторий | Что в нём | Что попробовать |
+|---|---|---|---|
+| 01 | first-commit | файлы, репозитория ещё нет | `git init`, add, commit |
+| 02 | index | изменены, новые, удалён, переименован, файл наполовину в индексе | status, три вида diff, add, `restore --staged`, restore, коммит части файлов |
+| 03 | branch-merge | ветка `feature/login` позади `main`, `fix/typo` уже слита | switch, `switch -c`, `switch -`, сравнить, `merge --no-ff`, `branch -d` |
+| 04 | conflict | слияние остановилось на конфликте в `style.css` | разобрать конфликт или `merge --abort` |
+| 05 | behind-remote | свой «сервер» в `_servers`; у вас 2 неотправленных коммита, на сервере 1 новый | fetch, `pull --ff-only` (на `main` откажет, на `docs` пройдёт), push, `push -u` |
+| 06 | stash | правка `notes.txt` мешает перейти на ветку `other`; один stash уже лежит | `stash push`, switch, `stash list`, `stash pop` |
+| 07 | tags | теги `projection-v0.1.0` и `v0.1.1`, после них ещё коммит | следующая версия, `tag -a`, `tag -n` |
+| 08 | lost-commit | коммит «step two» стёрт reset'ом | reflog, ветка от потерянного коммита |
+| 09 | revert-reset | третий коммит сломал расчёт | revert, `reset --soft`, `reset --hard` |
+| 10 | source-mirror | проект (`source`) и его GIT-КОПИЯ (`git-copy`) разошлись | план зеркала, применить, сверить, коммит GIT-КОПИИ |
+
+Тесты программы гоняют каждую команду канона на свежей копии лаборатории и проверяют, что из неё вышло; пять сетевых
+(`ssh -T`, `gh`, `glab`) — по форме команды.

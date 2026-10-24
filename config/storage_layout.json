@@ -2,9 +2,9 @@
   "layout_version": 1,
   "roots": {
     "manager_root": "${APP_ROOT}",
-    "hub_data_root": "S:/Audion/Hub Data",
-    "docs_root": "S:/Audion/Docs",
-    "full_projects_root": "S:/TOOLS"
+    "hub_data_root": "${APP_ROOT}/../Hub Data",
+    "docs_root": "${APP_ROOT}/../Hub Docs",
+    "full_projects_root": "${APP_ROOT}/.."
   },
   "roles": {
     "manager_root": "Independent portable app/codebase",

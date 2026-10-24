@@ -42,6 +42,66 @@ def test_projection_mirror_preserves_empty_service_dirs(tmp_path: Path) -> None:
     assert not (target / "runtime" / "python.exe").exists()
 
 
+def test_the_mirror_leaves_out_what_the_project_gitignore_hides(tmp_path: Path) -> None:
+    import subprocess
+
+    # The source lies inside another repository whose .gitignore would hide its README: only its own one counts.
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    (tmp_path / ".gitignore").write_text("*.md\n", encoding="utf-8")
+    source, target = tmp_path / "source", tmp_path / "target"
+    for rel in ("README.md", "src/app.py", "build-ui/src/moc_app.py", "config/api_key.py", "sub/notes.py"):
+        (source / rel).parent.mkdir(parents=True, exist_ok=True)
+        (source / rel).write_text("x\n", encoding="utf-8")
+    (source / ".gitignore").write_text("build*/\nconfig/api_key.py\n", encoding="utf-8")
+    (source / "sub" / ".gitignore").write_text("notes.py\n", encoding="utf-8")
+    profile = ProjectionProfile(id="test", include_globs=["*.md", "*.py", ".gitignore"], preserve_empty_dirs=False, compare_mode="quick")
+
+    plan = plan_projection(source, target, profile)
+    copied = sorted(item["rel_path"] for item in plan["items"] if item["action"] == "copy")
+    assert copied == [".gitignore", "README.md", "src/app.py", "sub/.gitignore"]
+    scan = plan["summary"]["source_scan"]
+    assert scan["skipped_by_gitignore"] == 2 and scan["gitignored_dirs"] >= 1, scan
+
+    profile.respect_gitignore = False
+    copied = {item["rel_path"] for item in plan_projection(source, target, profile)["items"] if item["action"] == "copy"}
+    assert {"build-ui/src/moc_app.py", "config/api_key.py", "sub/notes.py"} <= copied
+
+
+def test_folder_guesses_give_way_to_the_project_gitignore_and_text_without_extension_passes(tmp_path: Path) -> None:
+    # Next.js keeps its pages in app/, Electron its icons in build/, fzf its scripts in bin/ and install without extension.
+    profile = ProjectionProfile(id="test", include_globs=["*.tsx", "*.png", ".gitignore"], output_dirs=["/app", "build", "bin"],
+                                extensionless_text_bytes=4096, preserve_empty_dirs=False, compare_mode="quick")
+    source = tmp_path / "web"
+    for rel, data in (("app/page.tsx", b"x"), ("build/icon.png", b"x"), ("bin/fzf-tmux", b"#!/bin/sh\n"), ("install", b"#!/bin/sh\n"),
+                      ("tool", b"MZ\x00\x00binary"), ("out/main.js", b"x")):
+        (source / rel).parent.mkdir(parents=True, exist_ok=True)
+        (source / rel).write_bytes(data)
+
+    def copied() -> set[str]:
+        return {i["rel_path"] for i in plan_projection(source, tmp_path / "copy", profile)["items"] if i["action"] == "copy"}
+
+    # No .gitignore: the guesses hold; a text without extension passes, a binary does not.
+    assert copied() == {"install"}
+    # With one, the project's word decides what is a build.
+    (source / ".gitignore").write_text("out/\n", encoding="utf-8")
+    assert copied() == {".gitignore", "app/page.tsx", "build/icon.png", "bin/fzf-tmux", "install"}
+
+
+def test_a_gitkeep_of_the_project_is_a_file_when_the_profile_puts_no_markers(tmp_path: Path) -> None:
+    # hono keeps perf-measures/*/generated/.gitkeep in its history: copied once, then the same - not "missing" for ever.
+    from system_core.core.projection_engine import verify_projection_mirror
+
+    source, target = tmp_path / "source", tmp_path / "target"
+    (source / "generated").mkdir(parents=True)
+    (source / "generated" / ".gitkeep").write_bytes(b"")
+    (source / "README.md").write_text("# x\n", encoding="utf-8")
+    profile = ProjectionProfile(id="test", include_globs=["*.md", ".gitkeep"], preserve_empty_dirs=False, compare_mode="quick")
+    apply_projection_plan(plan_projection(source, target, profile), dry_run=False)
+    assert (target / "generated" / ".gitkeep").is_file()
+    assert verify_projection_mirror(source, target, profile)["summary"]["missing"] == 0
+    assert not any(i["action"] == "copy" for i in plan_projection(source, target, profile)["items"])
+
+
 def test_strict_blake3_detects_same_size_same_mtime_different_content(tmp_path: Path, monkeypatch) -> None:
     from system_core.core import projection_engine as engine
 

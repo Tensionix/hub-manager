@@ -18,6 +18,9 @@ if defined BASE_PREFIX_WORK (
   goto base_prefix_len_loop
 )
 set "BASE_PREFIX_WORK="
+rem The built window and its launcher are the program: the patterns below (*.exe, *.dll) pass them by.
+set "APP_PREFIX=%BASE_PREFIX%App\"
+set /a APP_PREFIX_LEN=BASE_PREFIX_LEN+4
 
 set "AUTO_YES=0"
 set "DRY_RUN=0"
@@ -41,8 +44,8 @@ echo.
 goto usage_error
 
 :args_done
-call :CheckMarker "%BASE_DIR%\system_core\ui_nicegui\app.py" || goto abort
-call :CheckMarker "%BASE_DIR%\config\projects.json" || goto abort
+call :CheckMarker "%BASE_DIR%\system_core\cli.py" || goto abort
+call :CheckMarker "%BASE_DIR%\config\projects.example.json" || goto abort
 call :CheckMarker "%BASE_DIR%\config\projection_profiles.json" || goto abort
 
 echo ======================================================================
@@ -55,18 +58,24 @@ echo This script returns Audion Hub Manager to a small source-only / LEAN state.
 echo Target shape: Git-tracked project structure plus preserved PDF artifacts.
 echo It keeps source scripts, documentation, permanent configs and release policies.
 echo It removes generated workspace content, build/runtime payloads and caches:
-echo   - input, output, logs, report, workspace, data, backup, release contents except PDF
+echo   - input, output, logs, report, workspace contents except PDF
 echo   - runtime, wheelhouse, install\download contents
 echo   - all folders named .runtime, _runtime, ._runtime, __pycache__
 echo   - pytest/mypy/ruff caches, root build/dist folders
-echo   - system_core\fzf.exe and system_core\powershell contents
-echo   - system_core\_pwsh_tmp, system_core\_powershell_tmp, system_core\_fzf_tmp
+echo   - system_core\fzf.exe: step 03 of the builder brings it back; system_core\_fzf_tmp
+echo   - the state of the window: its settings and the history of its command line
+echo   - the data of this machine: a registry in the program folder - hub_projects.json, config\projects.json
+echo     (the registry lies in the root of the projects; a fresh one comes from projects.example.json)
+echo     and the Forgejo servers config\forgejo_hosts.json
+echo   - Source\bin, Source\obj, Source\Ps\bin, Source\Ps\obj: what a build of the window leaves
+echo   - examples\lab: the Git lab, built anew by its button; work: what the build of Start.exe leaves
+echo   - the built window App\ and Start.exe stay: the program is the window
 echo   - root licenses\ is preserved unchanged
 echo   - generated/cache files, archives, binaries, local overrides and secrets
 echo.
 echo PDF files are kept for pre-release documentation/PDF-generation workflows.
 echo.
-echo Protected: system_core source, config, docs, launchers, install scripts, licenses.
+echo Protected: App\, Start.exe, Source, system_core source, config, docs, install scripts, licenses.
 if "%DRY_RUN%"=="1" echo Dry-run: ON. Nothing will be deleted.
 echo.
 
@@ -98,8 +107,6 @@ echo.
 call :RemoveNamedDirs ".runtime"
 call :RemoveNamedDirs "_runtime"
 call :RemoveNamedDirs "._runtime"
-call :RemoveNamedDirs "_pwsh_tmp"
-call :RemoveNamedDirs "_powershell_tmp"
 call :RemoveNamedDirs "_fzf_tmp"
 call :RemoveNamedDirs "__pycache__"
 call :RemoveNamedDirs ".pytest_cache"
@@ -111,20 +118,30 @@ call :ClearDir "%BASE_DIR%\output"
 call :ClearDir "%BASE_DIR%\logs"
 call :ClearDir "%BASE_DIR%\report"
 call :ClearDir "%BASE_DIR%\workspace"
-call :ClearDir "%BASE_DIR%\data"
-call :ClearDir "%BASE_DIR%\backup"
-call :ClearDir "%BASE_DIR%\release"
 call :ClearDir "%BASE_DIR%\runtime"
 call :ClearDir "%BASE_DIR%\wheelhouse"
 call :ClearDir "%BASE_DIR%\install\download"
-call :ClearDir "%BASE_DIR%\system_core\powershell"
-call :RemoveDir "%BASE_DIR%\system_core\_pwsh_tmp"
-call :RemoveDir "%BASE_DIR%\system_core\_powershell_tmp"
 call :RemoveDir "%BASE_DIR%\system_core\_fzf_tmp"
 rem licenses\ is intentionally preserved by release cleanup.
 call :RemoveDir "%BASE_DIR%\build"
 call :RemoveDir "%BASE_DIR%\dist"
 call :RemoveFile "%BASE_DIR%\system_core\fzf.exe"
+call :RemoveFile "%BASE_DIR%\config\window_settings.json"
+call :RemoveFile "%BASE_DIR%\config\terminal_commands.json"
+rem The registry and the Forgejo servers of this machine: a copy for a release shows its own projects, not the owner's.
+rem The registry lies in the root of the projects; in the program folder it is when that folder was the root, or kept from before.
+call :RemoveFile "%BASE_DIR%\hub_projects.json"
+call :RemoveFile "%BASE_DIR%\config\projects.json"
+call :RemoveFile "%BASE_DIR%\config\forgejo_hosts.json"
+call :RemoveDir "%BASE_DIR%\Source\bin"
+call :RemoveDir "%BASE_DIR%\Source\obj"
+call :RemoveDir "%BASE_DIR%\Source\Ps\bin"
+call :RemoveDir "%BASE_DIR%\Source\Ps\obj"
+rem The Git lab - ten repositories, a .git in each - is built anew by its button (hub_cli lab create): no archive carries it.
+rem Whole, its PDFs too: they are files of the lessons, not documentation.
+call :RemoveWholeDir "%BASE_DIR%\examples\lab"
+rem What install\Build-StartLauncher.ps1 leaves.
+call :RemoveDir "%BASE_DIR%\work"
 
 call :RemoveFilesByPattern "*.pyc"
 call :RemoveFilesByPattern "*.pyo"
@@ -349,6 +366,23 @@ rd /s /q "%TARGET%" >nul 2>nul
 if exist "%TARGET%\" call :MarkError "Could not remove directory: %TARGET%"
 exit /b 0
 
+:RemoveWholeDir
+set "TARGET=%~1"
+if not exist "%TARGET%\" exit /b 0
+call :AssertInside "%TARGET%" || (
+  set /a ERROR_COUNT+=1
+  exit /b 1
+)
+if "%DRY_RUN%"=="1" (
+  echo   [DRY] rmdir /s /q "%TARGET%"
+  exit /b 0
+)
+echo   rmdir "%TARGET%"
+attrib -r -s -h "%TARGET%\*" /s /d >nul 2>nul
+rd /s /q "%TARGET%" >nul 2>nul
+if exist "%TARGET%\" call :MarkError "Could not remove directory: %TARGET%"
+exit /b 0
+
 :RemoveFile
 set "TARGET=%~1"
 if not exist "%TARGET%" exit /b 0
@@ -374,8 +408,13 @@ exit /b 0
 set "PATTERN=%~1"
 echo [FILES] Removing %PATTERN%
 for /f "delims=" %%F in ('dir /a-d /b /s "%BASE_DIR%\%PATTERN%" 2^>nul') do (
-  if /I "%%~xF"==".pdf" (
-    echo   keep PDF "%%~fF"
+  set "FOUND=%%~fF"
+  set "KEEP="
+  if /I "!FOUND:~0,%APP_PREFIX_LEN%!"=="!APP_PREFIX!" set "KEEP=window"
+  if /I "%%~fF"=="%BASE_DIR%\Start.exe" set "KEEP=window"
+  if /I "%%~xF"==".pdf" set "KEEP=PDF"
+  if defined KEEP (
+    if /I "!KEEP!"=="PDF" echo   keep PDF "%%~fF"
   ) else (
     if "%DRY_RUN%"=="1" (
       echo   [DRY] del "%%~fF"
@@ -404,19 +443,6 @@ for /f "delims=" %%F in ('dir /a-d /b /s "%BASE_DIR%\.env*" 2^>nul') do (
   )
 )
 exit /b 0
-
-:ClearGeneratedLicenses
-rem Safety guard: release cleanup must never touch licenses\.
-echo [LICENSES] Preserving licenses\ unchanged
-exit /b 0
-
-:KeepLicenseFile
-if /I "%~1"==".gitkeep" exit /b 0
-if /I "%~1"=="_records.json" exit /b 0
-if /I "%~1"=="THIRD_PARTY_NOTICES.md" exit /b 0
-if /I "%~1"=="RELEASE_CHECKLIST.md" exit /b 0
-if /I "%~1"=="RELEASE_POLICY.md" exit /b 0
-exit /b 1
 
 :AssertInside
 set "TARGET_ABS=%~f1"

@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions
 
-title Audion Python GUI Portable Template - Update Requirements Lock
+title Audion Hub Manager - Update Requirements Lock
 
 set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"

@@ -8,15 +8,14 @@
   <a href="https://github.com/Tensionix/hub-manager/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/Tensionix/hub-manager?style=flat-square&color=5fd08a&logo=apache&logoColor=white&cacheSeconds=3600"></a>
 </p>
 
-**Version 2.0.0** · 2026-10-25 · 77.4 MB
+**Version 2.0.0** · 2026-10-25 · 112.0 MB
 
-- [Direct download](https://dl.audion.dev/hub-manager/2.0.0/Audion_Hub_Manager_v2.0.0.zip) — unmetered, no rate limits
+- [Direct download](https://audion.dev/get/hub-manager/2.0.0/Audion_Hub_Manager_v2.0.0_Full.zip) — unmetered, no rate limits
 - [Project page](https://audion.dev/downloads/hub-manager) — every version and how to install
-- [GitHub release](https://github.com/Tensionix/hub-manager/releases/tag/v2.0.0)
 
 <p align="center"><img src="docs/screenshot.png" alt="The program window" width="560"></p>
 
-`SHA-256: 498578b56854dae86d1b502f693b08f2496a75277c6590266a9f99418a19a510`
+`SHA-256: a503576c0f67a447600d9d0dffb81623bc1a7bb60da30b668d2d638868316fa1`
 
 ---
 
@@ -24,157 +23,126 @@ An **Audion** tool, published by [Tensionix](https://github.com/Tensionix).
 <!-- /audion:release -->
 
 
-[Русский](docs/README_RU.md) · [User Guide](docs/USER_GUIDE_EN.md) · [Decisions](docs/DECISIONS_EN.md) · [History](docs/CHANGELOG_EN.md)
+[English README](docs/README_EN.md) · [User Guide](docs/USER_GUIDE_EN.md) | [Русский README](docs/README_RU.md) · [Руководство](docs/USER_GUIDE_RU.md)
+
+[Git wiki](docs/GIT_WIKI_HUB_MANAGER_EN.md) · [Console command](docs/CLI_EN.md) · [How it is built](docs/TECH_SPEC_EN.md) · [Decisions](docs/DECISIONS_EN.md) · [History](docs/CHANGELOG_EN.md)
 
 **Contents**
 
-- [Why It Exists](#why-it-exists)
-- [Principles](#principles)
-- [What It Looks Like in Use](#what-it-looks-like-in-use)
-- [What It Can Do](#what-it-can-do)
-- [Next](#next)
-- [Technical Reference](#technical-reference)
-  - [Running](#running)
-  - [Describing a Project](#describing-a-project)
-  - [Where Things Live](#where-things-live)
-  - [Verification](#verification)
-  - [Restoring From the Mirror](#restoring-from-the-mirror)
-  - [Rules That Cannot Be Broken](#rules-that-cannot-be-broken)
+- [Why](#why)
+- [How it looks](#how-it-looks)
+- [What it does](#what-it-does)
+- [Start](#start)
+- [What lies where](#what-lies-where)
+- [A project record](#a-project-record)
+- [Back from the mirror](#back-from-the-mirror)
+- [Rules not to break](#rules-not-to-break)
+- [Checks](#checks)
 
-A portable workshop for projects: see what a project contains, keep its history
-in Git, and maintain a clean mirror — without dragging runtimes, caches, logs,
-and local keys along with it.
+A portable Windows program to keep projects in Git and to learn Git on real work. The window runs real `git`, shows
+every command whole and says in plain words what it did and how to undo it. A project lives in three layers meanwhile:
+the live source, a clean GIT COPY for the history and the server, a folder of documents to read.
 
-## Why It Exists
+> The source stays whole. The mirror stays clear. The documents stay readable. Git stops being frightening.
 
-A working project has two incompatible properties. It must be complete — with
-every temporary file, build leftover, and machine-specific setting, or you
-cannot work in it. And it must be surveyable — so its history can be read, its
-changes compared, and a copy restored without first working out which files are
-source and which are yesterday's build residue.
+## Why
 
-Those don't fit in one folder. So a project lives in three layers:
+A live project has two properties that do not go together. It has to be complete — with its builds, caches, logs and
+the settings of this machine, or it cannot be worked on. And it has to be clear — so its history can be read, its changes
+compared and a copy brought back without sorting out what is source and what is a trace of yesterday's build.
+
+So a project lives in three layers:
 
 ```
-Source     the complete project, the single source of truth
-Mirror     a filtered technical copy with its own Git
-Docs       the human-readable layer: notes, descriptions, indexes
+SOURCE      the whole project, the only source of truth
+GIT COPY    a clean mirror by a profile: code, documents, configs without secrets; its own .git
+DOCS        a layer to read: Markdown and texts for Obsidian, LogSeq or a plain folder
 ```
 
-The mirror can be deleted and rebuilt. The docs can be synced by anything — an
-editor, a file manager, Obsidian, a cloud drive, or nothing at all. The source is
-never modified.
+The GIT COPY can be deleted and built again. DOCS is synced by anything. The mirror never changes the SOURCE.
 
-The project in one line:
+The other half of the idea is Git without learning by heart. All the Git commands of the program are one table (the
+canon, 63 operations): the command, its risk, what it does and how to undo it, in two languages. A button of the window
+is an entry of that table, and its caption is the command as typed in a terminal. One works and learns at the same
+time.
 
-> Source stays whole. The mirror stays surveyable. The docs stay readable. Git
-> stops being scary.
+## How it looks
 
-## Principles
+The window speaks Russian and English (RU / EN at the top right); this guide names its labels as the English window
+shows them, with the Russian label in brackets.
 
-**The source is the truth, and the mirror never writes to it.** Not ever, under
-any setting. The mirror may delete and rebuild its own files, but on the source
-side it can only read.
+At the top: the project from the registry and the layer switch — SOURCE (ИСХОДНИК), GIT COPY (GIT-КОПИЯ) or DOCS. Git
+commands go into the repository of the chosen layer. Under it, seven sections:
 
-**A real write requires explicit intent.** By default the mirror shows what it
-intends to do and stops there. Making it actually write takes a separate word.
+| Section | What is there |
+|---|---|
+| CHANGES (ИЗМЕНЕНИЯ) | files by stage (conflicts, in the index, changed, new), the diff of the chosen file, the commit: type, scope, version, tag |
+| HISTORY (ИСТОРИЯ) | the graph of the commits of every branch, a commit with its files, the history of a file, tags, reflog; revert, cherry-pick, reset |
+| BRANCHES (ВЕТКИ) | your branches and the server's, compare, merge, edits put aside (stash), the way out of a stuck merge |
+| SYNC (СИНХРОНИЗАЦИЯ) | the remotes of the repository, fetch, pull, push, an address for GitHub, GitLab, Codeberg, Forgejo, Gitea, the check of access, a Forgejo token |
+| MIRROR (ЗЕРКАЛО) | the plan SOURCE → GIT COPY by the profile, apply, the BLAKE3 check |
+| PROJECTS (ПРОЕКТЫ) | the panel of the folders of the machine, the registry with the state of each layer, batch checks, finding projects in a folder, a clone, the Git lab |
+| SERVICE (ОБСЛУЖИВАНИЕ) | the scan for secrets and heavy files, a bundle backup, the health of the repository, Git's settings, the tools of the machine |
 
-**A filter cannot silently become a full copy.** If a profile demands masks and
-none are set, planning fails with an explanation rather than assembling a
-complete duplicate of the project. Otherwise one day the "filtered mirror" turns
-out to be a full clone, and you find out from a disk that ran out.
+Under the page of a section, a bar of its frequent operations with their fields: the subject of a commit, a branch name,
+an address. At the bottom, the terminal: every command whole, its output in Git's colours, the explanation and the
+outcome with its exit code; the command line takes `git`, the program's PowerShell or `cmd`. A hint line names the next
+step: "3 in the index: write the subject below and press COMMIT".
 
-**A copy error forbids deletion.** Unconditionally, regardless of settings. This
-is precisely the case where a mirror can drop files that exist nowhere else.
+## What it does
 
-**This is not a secret store.** Tokens, passwords, and keys live where they
-belong: in the credential manager, in ssh-agent, in external sign-in tools. The
-program runs ordinary `git` commands and shows their output in full — if you are
-already signed in elsewhere, everything works without it knowing anything.
+- **All of Git for every day** — state, diff, index, a commit of some files, version tags, branches, merge, edits put
+  aside, history and graph, undo and the rescue of the lost, remotes, fetch, pull, push, a backup without a server. The
+  rare and dangerous are templates one finishes and runs on purpose.
+- **Danger asks.** Restore a file, reset a branch, rewrite the last commit — the window shows the whole command, what is
+  not committed now and how to undo it; `reset --hard` is confirmed by typing the word RESET.
+- **A commit by the profile.** A file outside the profile of the project gets into neither the index nor a commit: builds,
+  logs and secrets do not go into the history.
+- **The mirror** — plan, apply and check of SOURCE against GIT COPY by BLAKE3 sums; a project brought back from the mirror.
+- **The project registry** — the real roots found in a shared folder, records without folders and duplicates cleaned, the
+  state of every project at once.
+- **Access without stored passwords** — SSH keys, Git Credential Manager, `gh` and `glab`; a personal Forgejo or Gitea
+  token is checked on the server and goes to Git's credential store, not to the program's files.
+- **The Git lab** — ten repositories in known states: a conflict, being behind a server, a lost commit and more. Built anew
+  with one button, with the same hashes on any machine.
+- **The console command** `hub_cli.cmd` — everything the window does beyond Git, without the window: one JSON per command.
 
-**The mirror's history follows the same list as the mirror itself.** No
-`git add .`: only what the profile would let through goes into a commit.
-
-## What It Looks Like in Use
-
-The project list at the top switches the whole set at once: source, mirror, docs
-folder, filtering profile, and default branch. One motion, not a hunt through a
-tree.
-
-Have a shared folder with twenty projects? It need not become one project: a scan
-finds the real roots inside — including nested `Project/Project` shapes — and
-registers each separately.
-
-Three layer buttons show what you are currently looking at: the live project, the
-mirror, or the docs. A badge beside the heading names the active layer and its
-path, so the two are never confused.
-
-The right half of the window is tabs by kind of work: frequent commands,
-branches, editor, comparison, storage, remotes, commit basket, reading, history,
-and details.
-
-## What It Can Do
-
-**Project registry** — maintain the list, scan a shared folder, clean out records
-with vanished paths and duplicates, show the state of every project at once: how
-many clean, how many with changes, where the errors are.
-
-**Mirror** — preview and apply by profile, verify source against mirror by
-checksums, restore a project from the mirror when the source is gone.
-
-**Git** — nearly the whole daily cycle: initialise, inspect state, compare, stage
-and commit, tags, branches and switching, stashes, history and graph, recovery,
-maintenance, syncing with remotes. Rare and dangerous operations remain explicit
-templates you must deliberately run.
-
-**Remotes** — assemble the address with buttons (GitHub, GitLab, Forgejo, Gitea,
-your own server), push and pull, work with several remotes at once, check sign-in
-without storing tokens.
-
-**Editor** — read and edit Markdown and text in the window, with one-press
-handover to VS Code.
-
-## Next
-
-* [User Guide](docs/USER_GUIDE_EN.md) — step by step: projects, mirror, Git, sign-in.
-* [Decisions](docs/DECISIONS_EN.md) — why three layers, why the mirror works this way,
-  and why the program holds no passwords.
-* [History](docs/CHANGELOG_EN.md) — what changed from version to version.
-* [Git wiki](docs/GIT_WIKI_HUB_MANAGER_EN.md) — a detailed walk through Git work.
-
----
-
-## Technical Reference
-
-### Running
+## Start
 
 ```cmd
-launcher_gui.cmd
+Start.exe
 ```
 
-Checking it works without the window:
+Needs Windows 10 or 11 (x64) and Git installed (`git` on `PATH`); `gh`, `glab` and VS Code are optional. The window, the
+program's PowerShell and the engine's Python lie in the program folder. If `runtime\` is empty, the builder makes the
+Python environment: `builder_main.cmd` → [01].
 
-```cmd
-launcher_cli.cmd --mirror-preview demo_local --json
-launcher_cli.cmd --mirror-apply demo_local --json
-launcher_cli.cmd --mirror-apply demo_local --apply --json
-```
+To begin with the lab: PROJECTS → GIT LAB (УЧЕБНАЯ ЛАБОРАТОРИЯ) → "build anew" (создать заново), then choose `lab_01` in
+the list of projects.
 
-If the portable runtime is missing:
+## What lies where
 
-```cmd
-install\Build_Portable_Env.cmd
-```
+| Path | What |
+|---|---|
+| `Start.exe` | starts the window |
+| `App\` | the window `AudionHubManager.exe` and the program's PowerShell 7 `AudionPs.exe` |
+| `hub_cli.cmd`, `system_core\` | the console command and the Python engine: registry, mirror, checks, Forgejo, the lab, the Git canon |
+| `config\` | the registry, the mirror profiles, known remotes and Forgejo servers (no tokens), the storage layout, the window's settings |
+| `examples\` | a demo project and the Git lab `examples\lab` |
+| `logs\` | the reports of the mirror, the checks and the scans: `logs\<project>\` |
+| `builder_main.cmd`, `install\` | the builder: the Python environment, the checks, the build of the window |
+| `runtime\`, `wheelhouse\` | the program's Python and its packages |
+| `docs\` | these documents |
 
-### Describing a Project
+## A project record
 
-`config/projects.json`:
+A record of the registry — `hub_projects.json` in the root of the projects, each root with its own:
 
 ```json
 {
   "id": "audion_hub_manager",
   "title": "Audion Hub Manager",
-  "source_path": ".",
+  "source_path": "Audion Hub Manager",
   "projection_path": "S:/Audion/Hub Data/Audion Hub Manager",
   "docs_path": "S:/Audion/Docs/Projects/Audion Hub Manager",
   "profile": "audion_python_project_projection",
@@ -182,60 +150,54 @@ install\Build_Portable_Env.cmd
 }
 ```
 
-| field | meaning |
+| Field | What |
 |---|---|
-| `source_path` | the live project; a relative path is resolved from the program root |
-| `projection_path` | the mirror; may carry its own `.git` and be rebuilt |
-| `docs_path` | optional docs layer for reading |
-| `profile` | filtering rules from `config/projection_profiles.json` |
-| `default_branch` | the branch Git commands work against |
+| `source_path` | SOURCE; a relative path counts from the root of the projects |
+| `projection_path` | GIT COPY, its own `.git`, rebuilt by the mirror |
+| `docs_path` | DOCS, optional |
+| `profile` | what goes into the GIT COPY and into a commit: a profile of `config\projection_profiles.json` |
+| `default_branch` | the branch pull and push take while a branch has no pair on the server; `git init` starts the history with it |
 
-A corrupt registry file no longer blocks startup: the program falls back to
-defaults, keeps the surviving records, and reports the problem in the output
-dock.
+Paths inside the root of the projects are written from it (`Hub Data/Project`): the root moves with its registry to
+another folder or disk. A GIT COPY may lie elsewhere or on another disk too — its path is then written in full. The
+default root is the folder beside the program; another is chosen by the folder button of the column of projects, and
+its menu also imports a registry from a file and exports it into one.
 
-### Where Things Live
+A search makes a record: PROJECTS → a folder in the panel FOLDERS → "find in a folder" (найти в папке) or `hub_cli.cmd projects scan FOLDER --import`. A
+folder that is a project itself (it has `.git`, `README.md`, `pyproject.toml` or the like) finds itself; a shared folder
+without such marks finds the projects in its subfolders. A cloned project is entered by the button "to the registry" (в
+реестр). The folders and the branch of a record are edited in PROJECTS → RECORD (ЗАПИСЬ) or by `hub_cli.cmd projects set`.
 
-```
-config/projects.json              project registry
-config/projection_profiles.json   filtering profiles
-config/forgejo_hosts.json         known Forgejo and Gitea servers, no tokens
-logs/<project_id>/                verification reports, dated JSON
-```
+## Back from the mirror
 
-Checksum manifests are built in memory; neither source, mirror, nor docs receive
-service files.
-
-### Verification
+The SOURCE is lost, the GIT COPY is alive:
 
 ```cmd
-python -m compileall -q system_core
-python -m pytest -q tests
-python system_core\ui_nicegui\app.py --smoke
+robocopy "<GIT COPY>\<Project>" "<root>\<Project>" /E /COPY:DAT /DCOPY:DAT /R:1 /W:1 /XJ
 ```
 
-Documented baseline: `121 passed`.
+What passed the profile comes back; runtimes and builds are built again.
 
-### Restoring From the Mirror
+## Rules not to break
+
+1. SOURCE is the source of truth; the mirror never changes it.
+2. GIT COPY is derived: it can be deleted and built again.
+3. `.git/**` is protected from the mirror's scan, deletion and upkeep.
+4. A real write of the mirror needs an explicit intent.
+5. Only what the profile lets through goes into the index and a commit.
+6. Tokens, passwords, private keys and the paths of this machine stay out of shared settings.
+7. What belongs to the machine lives in `*.local.json`, `.env` and other excluded files.
+8. Check reports are written only into `logs\<project>\`.
+9. The DOCS layer is not checked on its own: its technical copy is in the GIT COPY already.
+
+## Checks
 
 ```cmd
-robocopy "<mirror>\Audion Hub Manager" "<root>\Audion Hub Manager" ^
-  /E /COPY:DAT /DCOPY:DAT /R:1 /W:1 /XJ
+runtime\python.exe -m pytest -q tests
+install\Build-App.cmd
+install\verify_portable_env.cmd
 ```
 
-Then rebuild the runtime or release artefacts if you need them.
-
-### Rules That Cannot Be Broken
-
-1. The source is the truth.
-2. The mirror is derived: it can be deleted and rebuilt.
-3. The mirror does not modify the source.
-4. `.git/**` is protected from scanning, deletion, and maintenance.
-5. A real write requires explicit intent.
-6. Commits follow the same list as the mirror.
-7. Tokens, passwords, private keys, and local paths never reach shared config.
-8. Machine-specific settings live in `*.local.json`, `.env`, and other excluded
-   files.
-9. Verification reports are written only to `logs/<project_id>/`.
-10. The docs layer is not hashed separately: its technical copy is already in the
-    mirror.
+The tests run the engine, the console command and every command of the canon on a fresh copy of the lab. A build of the
+window ends with its self-check; `verify_portable_env.cmd` checks the environment, the console command, `Start.exe` and the
+built window.

@@ -78,6 +78,34 @@ def test_scan_project_folder_accepts_single_project_root(tmp_path: Path) -> None
     assert Path(entries[0]["source_path"]) == project.resolve()
 
 
+def test_scan_project_folder_keeps_a_marked_project_over_its_fixtures(tmp_path: Path) -> None:
+    project = tmp_path / "Tool"
+    fixture = project / "build-ui" / "fixtures" / "dirty-source"
+    (project / "src").mkdir(parents=True)
+    (project / "CMakeLists.txt").write_text("project(tool)\n", encoding="utf-8")
+    for name in ("pyproject.toml", "package.json", "README.md", "AGENTS.md", "CHANGELOG.md"):
+        fixture.mkdir(parents=True, exist_ok=True)
+        (fixture / name).write_text("x\n", encoding="utf-8")
+    (fixture / "src").mkdir()
+
+    # The folder itself, and the same when it is one of the folders of a shared one.
+    assert [Path(e["source_path"]) for e in scan_project_folder(project, tmp_path / "Hub Data")] == [project.resolve()]
+    assert [Path(e["source_path"]) for e in scan_project_folder(tmp_path, tmp_path / "Hub Data")] == [project.resolve()]
+
+
+def test_scan_project_folder_does_not_take_an_empty_git_folder_for_a_project(tmp_path: Path) -> None:
+    shared = tmp_path / "TOOLS"
+    (shared / ".git" / "info").mkdir(parents=True)
+    for name in ("Alpha", "Beta"):
+        (shared / name).mkdir()
+        (shared / name / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
+        (shared / name / "README.md").write_text("# x\n", encoding="utf-8")
+
+    entries = scan_project_folder(shared, tmp_path / "Hub Data")
+
+    assert [e["title"] for e in entries] == ["Alpha", "Beta"]
+
+
 def test_merge_project_import_skips_existing_source(tmp_path: Path) -> None:
     source = tmp_path / "Source" / "Tool"
     source.mkdir(parents=True)

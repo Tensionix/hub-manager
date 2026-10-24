@@ -2,83 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 
-from system_core.core.safety import classify_path, is_dangerous_command, scan_safety
-
-
-@pytest.mark.parametrize(
-    "command",
-    [
-        "git reset --hard",
-        "git -C repo reset --hard HEAD",
-        "git clean -fd",
-        "git clean -dfx",
-        "git clean -f -d",
-        "git clean --force --directories",
-        "git push --force origin main",
-        "git push -f origin main",
-        "git push --force-with-lease",
-        "git push --force-with-lease=refs/heads/main",
-        "rm -rf build",
-        "rm -fr build",
-        "rm -r -f build",
-        "rm --recursive --force build",
-        "rmdir /s build",
-        "rd /s /q build",
-        "del /s *.tmp",
-        "erase /s *.tmp",
-    ],
-)
-def test_is_dangerous_command_blocks_destructive_commands(command: str) -> None:
-    assert is_dangerous_command(command)
-
-
-@pytest.mark.parametrize(
-    "command",
-    [
-        "git status && rm -fr build",
-        "git status; git reset --hard",
-        "git status | rm --recursive --force build",
-        "echo $(rm --recursive --force build)",
-        "echo `rm -rf build`",
-    ],
-)
-def test_is_dangerous_command_blocks_compound_payloads(command: str) -> None:
-    assert is_dangerous_command(command)
-
-
-@pytest.mark.parametrize(
-    "command",
-    [
-        'sh -c "rm -fr build"',
-        'bash -lc "git reset --hard"',
-        'cmd /c "rmdir /s /q build"',
-        'powershell -NoProfile -Command "Remove-Item -Recurse -Force build"',
-        'pwsh -Command "git push --force"',
-        "powershell -EncodedCommand SQBFAFgA",
-    ],
-)
-def test_is_dangerous_command_blocks_nested_shell_payloads(command: str) -> None:
-    assert is_dangerous_command(command)
-
-
-@pytest.mark.parametrize(
-    "command",
-    [
-        "git status --short",
-        "git clean -fdn",
-        "git clean --dry-run --force --directories",
-        "git push origin main",
-        "rm -f single-file.txt",
-        "echo rm -rf build",
-        "type README.md > out.txt",
-        "git status | findstr modified",
-        "powershell -Command \"Write-Output 'rm -rf build'\"",
-    ],
-)
-def test_is_dangerous_command_allows_common_safe_commands(command: str) -> None:
-    assert not is_dangerous_command(command)
+from system_core.core.safety import classify_path, scan_safety
 
 
 def test_classify_path_marks_heavy_and_secret_candidates(tmp_path: Path) -> None:
@@ -108,6 +33,24 @@ def test_scan_safety_detects_secret_content_without_leaking_value(tmp_path: Path
     assert finding["rel_path"] == "config.py"
     assert "openai_api_key" in finding["flags"]
     assert secret_value not in str(payload)
+
+
+def test_scan_safety_knows_the_keys_of_vpn_and_s3_by_their_content(tmp_path: Path) -> None:
+    # A config of WireGuard or AmneziaWG and a remote of rclone may be named anything: the content tells.
+    root = tmp_path / "project"
+    (root / "vpn").mkdir(parents=True)
+    key = "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk="
+    (root / "vpn" / "peer.conf").write_text(f"[Interface]\nPrivateKey = {key}\nAddress = 10.0.0.2/32\n", encoding="utf-8")
+    (root / "remotes.conf").write_text("[s3]\ntype = s3\nsecret_access_key = abcdefghijklmnopqrstuvwxyz0123\n", encoding="utf-8")
+    (root / "sftp.conf").write_text("[box]\ntype = sftp\npass = Xk3mZq9vR2tLw8yHb5nC\n", encoding="utf-8")
+    (root / "public.conf").write_text("[Peer]\nPublicKey = " + key + "\nAllowedIPs = 0.0.0.0/0\n", encoding="utf-8")
+
+    payload = scan_safety(root)
+    flags = {f["rel_path"]: f["flags"] for f in payload["findings"]}
+
+    assert "wireguard_private_key" in flags["vpn/peer.conf"] and "s3_secret_access_key" in flags["remotes.conf"]
+    assert "secret_assignment" in flags["sftp.conf"] and "public.conf" not in flags
+    assert payload["summary"]["blockers"] == 3 and key not in str(payload)
 
 
 def test_scan_safety_skips_generated_directories_by_default(tmp_path: Path) -> None:
@@ -148,3 +91,24 @@ def test_scan_safety_missing_root_reports_error(tmp_path: Path) -> None:
     assert payload["ok"] is False
     assert payload["summary"]["errors"] == 1
     assert payload["errors"]
+
+
+def test_a_file_held_open_by_another_program_is_not_a_clean_file(tmp_path: Path) -> None:
+    # The audit of 24.10.2026: a file locked with no sharing passed the scan with a secret in it.
+    import ctypes
+    from ctypes import wintypes
+
+    root = tmp_path / "project"
+    root.mkdir()
+    notes = root / "notes.txt"
+    notes.write_text("password = " + "Xk3mZq9vR2tLw8yHb5nC\n", encoding="utf-8")
+    assert scan_safety(root)["summary"]["blockers"] == 1
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CreateFileW.restype = wintypes.HANDLE
+    handle = kernel.CreateFileW(str(notes), 0x80000000, 0, None, 3, 0x80, None)  # GENERIC_READ, no sharing, OPEN_EXISTING
+    try:
+        locked = scan_safety(root)
+    finally:
+        kernel.CloseHandle(handle)
+    assert locked["ok"] is False and locked["summary"]["errors"] == 1 and "notes.txt" in locked["errors"][0]
+    assert scan_safety(root)["summary"]["blockers"] == 1

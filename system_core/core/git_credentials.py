@@ -20,7 +20,7 @@ from urllib.parse import urlparse
 import os
 import subprocess
 
-from .terminal_render import decode_output_bytes
+from .output_decode import decode_process_bytes
 
 
 DEFAULT_PORTS = {"https": 443, "http": 80}
@@ -143,8 +143,8 @@ def _run_credential(action: str, payload: str, cwd: Path | None = None, timeout:
         return None, "", "", "git executable not found"
     except subprocess.TimeoutExpired:
         return None, "", "", "timeout"
-    stdout = decode_output_bytes(completed.stdout) if isinstance(completed.stdout, bytes) else str(completed.stdout or "")
-    stderr = decode_output_bytes(completed.stderr) if isinstance(completed.stderr, bytes) else str(completed.stderr or "")
+    stdout = decode_process_bytes(completed.stdout) if isinstance(completed.stdout, bytes) else str(completed.stdout or "")
+    stderr = decode_process_bytes(completed.stderr) if isinstance(completed.stderr, bytes) else str(completed.stderr or "")
     return completed.returncode, stdout, stderr.strip(), ""
 
 
@@ -211,7 +211,7 @@ def configured_helpers(cwd: Path | None = None) -> tuple[list[str], str]:
         )
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return [], "git config probe failed"
-    stdout = decode_output_bytes(completed.stdout) if isinstance(completed.stdout, bytes) else str(completed.stdout or "")
-    stderr = decode_output_bytes(completed.stderr) if isinstance(completed.stderr, bytes) else str(completed.stderr or "")
+    stdout = decode_process_bytes(completed.stdout) if isinstance(completed.stdout, bytes) else str(completed.stdout or "")
+    stderr = decode_process_bytes(completed.stderr) if isinstance(completed.stderr, bytes) else str(completed.stderr or "")
     helpers = [line.strip() for line in stdout.splitlines() if line.strip()]
     return helpers, stderr.strip()

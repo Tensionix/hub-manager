@@ -1,0 +1,1166 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:AudionHubManager"
+             x:Class="AudionHubManager.App"
+             RequestedThemeVariant="Dark">
+
+    <Application.Resources>
+      <ResourceDictionary>
+        <!-- The shell of Audion Sync Tools 2.0.0 (which took it from Audion Disk Tools): its four themes, its sizes
+             and its styles, copied on 08.10.2026 without the part that belongs to the file panels (DataGrid).
+             Kept whole on purpose, with the styles this small window does not use: the four windows of the Build
+             tools are to look alike, and a copy cut to the bone goes its own way at the first change.
+             Everything uses DynamicResource, so switching the theme variant repaints the live window. -->
+        <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <!-- The dots of state, the journal and the live line under it (from Audion Sync Tools). -->
+                    <SolidColorBrush x:Key="DotIdle" Color="#4a565e"/>
+                    <SolidColorBrush x:Key="DotOk" Color="#32d74b"/>
+                    <SolidColorBrush x:Key="LogPlain" Color="#c9d6de"/>
+                    <SolidColorBrush x:Key="LogMuted" Color="#7d8b95"/>
+                    <SolidColorBrush x:Key="LogHead" Color="#58a6ff"/>
+                    <SolidColorBrush x:Key="LogGood" Color="#32d74b"/>
+                    <SolidColorBrush x:Key="LogWarn" Color="#d99642"/>
+                    <SolidColorBrush x:Key="LogBad" Color="#dc6b5d"/>
+                    <SolidColorBrush x:Key="LiveSpeed" Color="#3b9cf0"/>
+                    <SolidColorBrush x:Key="AppBg" Color="#1d2022"/>
+                    <SolidColorBrush x:Key="PanelBg" Color="#0e1114"/>
+                    <SolidColorBrush x:Key="BorderSoft" Color="#33414a"/>
+                    <SolidColorBrush x:Key="TextMain" Color="#edf2f4"/>
+                    <SolidColorBrush x:Key="TextMuted" Color="#a9b3ba"/>
+                    <SolidColorBrush x:Key="Quasar" Color="#58a6ff"/>
+                    <SolidColorBrush x:Key="Run" Color="#5dcaa5"/>
+                    <SolidColorBrush x:Key="TooltipBg" Color="#17212b"/>
+                    <SolidColorBrush x:Key="ButtonBg" Color="#22282c"/>
+                    <SolidColorBrush x:Key="FocusBorder" Color="#36506a"/>
+                    <SolidColorBrush x:Key="RunBg" Color="#1e3a33"/>
+                    <SolidColorBrush x:Key="RunBorder" Color="#2f6b5b"/>
+                    <SolidColorBrush x:Key="WarnBg" Color="#38291b"/>
+                    <SolidColorBrush x:Key="WarnBorder" Color="#6b4a2c"/>
+                    <SolidColorBrush x:Key="SwitchBg" Color="#1a1f22"/>
+                    <SolidColorBrush x:Key="SwitchBorder" Color="#1d2327"/>
+                    <SolidColorBrush x:Key="SwitchOn" Color="#22333f"/>
+                    <SolidColorBrush x:Key="GripBg" Color="#2b343a"/>
+                    <SolidColorBrush x:Key="InputBg" Color="#151b1f"/>
+                    <SolidColorBrush x:Key="ListBg" Color="#1a2126"/>
+                    <!-- The file list: the colour of the list at the top, a shade
+                         darker towards the bottom. -->
+                    <Color x:Key="ListTop">#1a2126</Color>
+                    <Color x:Key="ListEnd">#0e1215</Color>
+                    <SolidColorBrush x:Key="RowHover" Color="#18232a"/>
+                    <!-- DIFF: a line that could not be compared - burnt orange, not an alarm red. -->
+                    <SolidColorBrush x:Key="BurnInk" Color="#e06a2b"/>
+                    <!-- DIFF: leans right - a sea light enough to read on the dark list. -->
+                    <!-- DIFF: the soft grid of the table - barely there. -->
+                    <SolidColorBrush x:Key="CrumbInk" Color="#5b6a74"/>
+                    <SolidColorBrush x:Key="PinBg" Color="#3a2f1d"/>
+                    <SolidColorBrush x:Key="PinBorder" Color="#b0782f"/>
+                    <!-- Accents: light amber for the few buttons that matter more,
+                         a warm sand for sizes in the status line. -->
+                    <SolidColorBrush x:Key="AmberInk" Color="#f0c878"/>
+                    <!-- The mark of the chosen line of a menu (the engine in the tray, the theme): tangerine, as in Audion DPI Manager. -->
+                    <SolidColorBrush x:Key="Tangerine" Color="#f28500"/>
+                    <!-- The green of the Windows copy dialog. -->
+                    <SolidColorBrush x:Key="ProgressInk" Color="#06b025"/>
+                    <SolidColorBrush x:Key="SepInk" Color="#2e3a42"/>
+                    <!-- Drop-downs and flyouts: about rgb(30,35,40), in tune with the panels. -->
+                    <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#1e2328"/>
+                    <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#33414a"/>
+                    <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#1e2328"/>
+                    <SolidColorBrush x:Key="FlyoutBorderThemeBrush" Color="#33414a"/>
+                    <!-- Audion Hub Manager: the colours of Git, one meaning each across the window - the file panel, the flow of the
+                         three places, the graph, the difference and the terminal. In the index green, changed gold, new sea, deleted coral,
+                         conflict Burn Orange, renamed violet, outside the profile grey. The lanes of the graph, the grounds of a difference. -->
+                    <SolidColorBrush x:Key="GitStaged" Color="#3ac35a"/>
+                    <SolidColorBrush x:Key="GitModified" Color="#e0b955"/>
+                    <SolidColorBrush x:Key="GitNew" Color="#5cc2d6"/>
+                    <SolidColorBrush x:Key="GitDeleted" Color="#dc6b5d"/>
+                    <SolidColorBrush x:Key="GitConflict" Color="#f57c00"/>
+                    <SolidColorBrush x:Key="GitRenamed" Color="#8b8cff"/>
+                    <SolidColorBrush x:Key="GitOut" Color="#5b6a74"/>
+                    <SolidColorBrush x:Key="LogExplain" Color="#5cc2d6"/>
+                    <SolidColorBrush x:Key="LaneA" Color="#58a6ff"/>
+                    <SolidColorBrush x:Key="LaneB" Color="#a97cf2"/>
+                    <SolidColorBrush x:Key="LaneC" Color="#e0b955"/>
+                    <SolidColorBrush x:Key="LaneD" Color="#3ac35a"/>
+                    <SolidColorBrush x:Key="LaneE" Color="#e879a6"/>
+                    <SolidColorBrush x:Key="LaneF" Color="#5cc2d6"/>
+                    <SolidColorBrush x:Key="DiffAddBg" Color="#1F3AC35A"/>
+                    <SolidColorBrush x:Key="DiffDelBg" Color="#1FDC6B5D"/>
+                    <SolidColorBrush x:Key="DiffHunkBg" Color="#145CC2D6"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <!-- The dots of state, the journal and the live line under it (from Audion Sync Tools). -->
+                    <SolidColorBrush x:Key="DotIdle" Color="#a3a099"/>
+                    <SolidColorBrush x:Key="DotOk" Color="#228b22"/>
+                    <SolidColorBrush x:Key="LogPlain" Color="#2b2820"/>
+                    <SolidColorBrush x:Key="LogMuted" Color="#6a6152"/>
+                    <SolidColorBrush x:Key="LogHead" Color="#1c6f86"/>
+                    <SolidColorBrush x:Key="LogGood" Color="#228b22"/>
+                    <SolidColorBrush x:Key="LogWarn" Color="#2f6b4f"/>
+                    <SolidColorBrush x:Key="LogBad" Color="#a5342a"/>
+                    <SolidColorBrush x:Key="LiveSpeed" Color="#1b6fc0"/>
+                    <SolidColorBrush x:Key="AppBg" Color="#f7f2e7"/>
+                    <SolidColorBrush x:Key="PanelBg" Color="#fffdf8"/>
+                    <SolidColorBrush x:Key="BorderSoft" Color="#b6b3ac"/>
+                    <SolidColorBrush x:Key="TextMain" Color="#26221c"/>
+                    <SolidColorBrush x:Key="TextMuted" Color="#5f584c"/>
+                    <SolidColorBrush x:Key="Quasar" Color="#1c6f86"/>
+                    <SolidColorBrush x:Key="Run" Color="#1f7a5a"/>
+                    <SolidColorBrush x:Key="TooltipBg" Color="#fbf7ee"/>
+                    <SolidColorBrush x:Key="ButtonBg" Color="#fbf7ee"/>
+                    <SolidColorBrush x:Key="FocusBorder" Color="#93b9c4"/>
+                    <SolidColorBrush x:Key="RunBg" Color="#c9e2d3"/>
+                    <SolidColorBrush x:Key="RunBorder" Color="#6ea78c"/>
+                    <SolidColorBrush x:Key="WarnBg" Color="#f2ddc9"/>
+                    <SolidColorBrush x:Key="WarnBorder" Color="#c99b74"/>
+                    <SolidColorBrush x:Key="SwitchBg" Color="#f4eee1"/>
+                    <SolidColorBrush x:Key="SwitchBorder" Color="#eae5d9"/>
+                    <SolidColorBrush x:Key="SwitchOn" Color="#c6dfe8"/>
+                    <SolidColorBrush x:Key="GripBg" Color="#c2bfb7"/>
+                    <SolidColorBrush x:Key="InputBg" Color="#fdfaf3"/>
+                    <SolidColorBrush x:Key="ListBg" Color="#fffdf8"/>
+                    <Color x:Key="ListTop">#fffdf8</Color>
+                    <Color x:Key="ListEnd">#ece5d6</Color>
+                    <SolidColorBrush x:Key="RowHover" Color="#f0e9d9"/>
+                    <SolidColorBrush x:Key="BurnInk" Color="#b34700"/>
+                    <SolidColorBrush x:Key="CrumbInk" Color="#867d6c"/>
+                    <SolidColorBrush x:Key="PinBg" Color="#f3e2c2"/>
+                    <SolidColorBrush x:Key="PinBorder" Color="#c08a3e"/>
+                    <SolidColorBrush x:Key="AmberInk" Color="#8a5a12"/>
+                    <SolidColorBrush x:Key="Tangerine" Color="#e07a00"/>
+                    <SolidColorBrush x:Key="ProgressInk" Color="#06b025"/>
+                    <SolidColorBrush x:Key="SepInk" Color="#d6d1c6"/>
+                    <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#fbf7ee"/>
+                    <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#b6b3ac"/>
+                    <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#fbf7ee"/>
+                    <SolidColorBrush x:Key="FlyoutBorderThemeBrush" Color="#b6b3ac"/>
+                    <!-- Audion Hub Manager: the colours of Git, one meaning each across the window - the file panel, the flow of the
+                         three places, the graph, the difference and the terminal. In the index green, changed gold, new sea, deleted coral,
+                         conflict Burn Orange, renamed violet, outside the profile grey. The lanes of the graph, the grounds of a difference. -->
+                    <SolidColorBrush x:Key="GitStaged" Color="#1f7a45"/>
+                    <SolidColorBrush x:Key="GitModified" Color="#8a6a12"/>
+                    <SolidColorBrush x:Key="GitNew" Color="#0a6fa8"/>
+                    <SolidColorBrush x:Key="GitDeleted" Color="#a5342a"/>
+                    <SolidColorBrush x:Key="GitConflict" Color="#b5561f"/>
+                    <SolidColorBrush x:Key="GitRenamed" Color="#4f52c7"/>
+                    <SolidColorBrush x:Key="GitOut" Color="#a39c8e"/>
+                    <SolidColorBrush x:Key="LogExplain" Color="#0a6fa8"/>
+                    <SolidColorBrush x:Key="LaneA" Color="#0a72b0"/>
+                    <SolidColorBrush x:Key="LaneB" Color="#6f42c1"/>
+                    <SolidColorBrush x:Key="LaneC" Color="#8a6a12"/>
+                    <SolidColorBrush x:Key="LaneD" Color="#1f7a45"/>
+                    <SolidColorBrush x:Key="LaneE" Color="#b03a78"/>
+                    <SolidColorBrush x:Key="LaneF" Color="#0a6fa8"/>
+                    <SolidColorBrush x:Key="DiffAddBg" Color="#241F7A45"/>
+                    <SolidColorBrush x:Key="DiffDelBg" Color="#24A5342A"/>
+                    <SolidColorBrush x:Key="DiffHunkBg" Color="#1A0A6FA8"/>
+                </ResourceDictionary>
+                <!-- Audion Code Dark: the Code Dark theme of Audion DocFlow (config\ui_colors.yaml, themes.code_dark,
+                     and the shared accents #d97757, #6a9bcc, #788c5d) on the keys of the Dark dictionary. The variant
+                     is App.CodeDark, it inherits Dark: what is not here comes from Dark and from Fluent's dark side.
+                     The rows keep the dark TC palette (config\colors\themes.json, "dark"). -->
+                <ResourceDictionary x:Key="{x:Static local:App.CodeDark}">
+                    <!-- The dots of state, the journal and the live line under it (from Audion Sync Tools). -->
+                    <SolidColorBrush x:Key="DotIdle" Color="#4a565e"/>
+                    <SolidColorBrush x:Key="DotOk" Color="#32d74b"/>
+                    <SolidColorBrush x:Key="LogPlain" Color="#c9d6de"/>
+                    <SolidColorBrush x:Key="LogMuted" Color="#7d8b95"/>
+                    <SolidColorBrush x:Key="LogHead" Color="#5fa8d8"/>
+                    <SolidColorBrush x:Key="LogGood" Color="#32d74b"/>
+                    <SolidColorBrush x:Key="LogWarn" Color="#d99642"/>
+                    <SolidColorBrush x:Key="LogBad" Color="#dc6b5d"/>
+                    <SolidColorBrush x:Key="LiveSpeed" Color="#3b9cf0"/>
+                <!-- Grounds: DocFlow's three backgrounds - #141413 (primary), #1f1e1a (secondary), #0f0f0e (tertiary). -->
+                <SolidColorBrush x:Key="AppBg" Color="#141413"/>
+                <SolidColorBrush x:Key="PanelBg" Color="#0f0f0e"/>
+                <SolidColorBrush x:Key="ListBg" Color="#1f1e1a"/>
+                <Color x:Key="ListTop">#1f1e1a</Color>
+                <Color x:Key="ListEnd">#121210</Color>
+                <SolidColorBrush x:Key="InputBg" Color="#0f0f0e"/>
+                <SolidColorBrush x:Key="TooltipBg" Color="#1f1e1a"/>
+                <SolidColorBrush x:Key="ButtonBg" Color="#1f1e1a"/>
+                <SolidColorBrush x:Key="SwitchBg" Color="#1a1917"/>
+                <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#1f1e1a"/>
+                <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#1f1e1a"/>
+
+                <!-- Text: #faf9f5 (primary), #b0aea5 (tertiary); the path crumbs a step quieter. -->
+                <SolidColorBrush x:Key="TextMain" Color="#faf9f5"/>
+                <SolidColorBrush x:Key="TextMuted" Color="#b0aea5"/>
+                <SolidColorBrush x:Key="CrumbInk" Color="#86847c"/>
+
+                <!-- Rims: the see-through ivory of DocFlow - 15 % (tertiary), 30 %, 40 % (primary). -->
+                <SolidColorBrush x:Key="BorderSoft" Color="#26FAF9F5"/>
+                <SolidColorBrush x:Key="SwitchBorder" Color="#08FAF9F5"/>
+                <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#4DFAF9F5"/>
+                <SolidColorBrush x:Key="FlyoutBorderThemeBrush" Color="#4DFAF9F5"/>
+                <SolidColorBrush x:Key="SepInk" Color="#1FFAF9F5"/>
+                <SolidColorBrush x:Key="GripBg" Color="#2a2925"/>
+
+                <!-- The accent: DocFlow's blue #6a9bcc in place of Quasar - active tab, focus, the active panel's frame. -->
+                <SolidColorBrush x:Key="Quasar" Color="#2e8fc4"/>
+                <SolidColorBrush x:Key="FocusBorder" Color="#66FAF9F5"/>
+                <SolidColorBrush x:Key="SwitchOn" Color="#1b4053"/>
+                <SolidColorBrush x:Key="RowHover" Color="#262520"/>
+                <!-- DIFF: the right side - DocFlow's info text, a lighter blue than the left one. -->
+
+                <!-- Run (F5, F11, СОВПАВШИЕ): the success tokens - a cool mint in place of DocFlow's lime #C0DD97 (the owner, 14.10.2026),
+                     beside the blue of the accent and the violet of the documents. -->
+                <SolidColorBrush x:Key="Run" Color="#5dcaa5"/>
+                <SolidColorBrush x:Key="RunBg" Color="#0f2e26"/>
+                <SolidColorBrush x:Key="RunBorder" Color="#2f8f72"/>
+                <SolidColorBrush x:Key="ProgressInk" Color="#2f8f72"/>
+
+                <!-- Warning and the amber accents: the warning tokens. -->
+                <SolidColorBrush x:Key="WarnBg" Color="#412402"/>
+                <SolidColorBrush x:Key="WarnBorder" Color="#BA7517"/>
+                <SolidColorBrush x:Key="PinBg" Color="#412402"/>
+                <SolidColorBrush x:Key="PinBorder" Color="#BA7517"/>
+                <SolidColorBrush x:Key="AmberInk" Color="#FAC775"/>
+                <SolidColorBrush x:Key="Tangerine" Color="#f28500"/>
+
+                <!-- Danger: the ground and the rim of F12 MIRROR (the owner: "this colour is the one for the dangerous buttons"), not red; the ink is DocFlow coral #d97757. -->
+                <SolidColorBrush x:Key="BurnInk" Color="#d97757"/>
+                    <!-- Audion Hub Manager: the colours of Git, one meaning each across the window - the file panel, the flow of the
+                         three places, the graph, the difference and the terminal. In the index green, changed gold, new sea, deleted coral,
+                         conflict Burn Orange, renamed violet, outside the profile grey. The lanes of the graph, the grounds of a difference. -->
+                    <SolidColorBrush x:Key="GitStaged" Color="#5dcaa5"/>
+                    <SolidColorBrush x:Key="GitModified" Color="#e0b955"/>
+                    <SolidColorBrush x:Key="GitNew" Color="#6cb6e0"/>
+                    <SolidColorBrush x:Key="GitDeleted" Color="#d9826f"/>
+                    <SolidColorBrush x:Key="GitConflict" Color="#e8773a"/>
+                    <SolidColorBrush x:Key="GitRenamed" Color="#a99af2"/>
+                    <SolidColorBrush x:Key="GitOut" Color="#6b6a64"/>
+                    <SolidColorBrush x:Key="LogExplain" Color="#6cb6e0"/>
+                    <SolidColorBrush x:Key="LaneA" Color="#2e8fc4"/>
+                    <SolidColorBrush x:Key="LaneB" Color="#a99af2"/>
+                    <SolidColorBrush x:Key="LaneC" Color="#e0b955"/>
+                    <SolidColorBrush x:Key="LaneD" Color="#5dcaa5"/>
+                    <SolidColorBrush x:Key="LaneE" Color="#e879a6"/>
+                    <SolidColorBrush x:Key="LaneF" Color="#6cb6e0"/>
+                    <SolidColorBrush x:Key="DiffAddBg" Color="#1F5DCAA5"/>
+                    <SolidColorBrush x:Key="DiffDelBg" Color="#1FD9826F"/>
+                    <SolidColorBrush x:Key="DiffHunkBg" Color="#146CB6E0"/>
+                </ResourceDictionary>
+                <!-- Audion Vault Dark: the window of Audion DPI Manager one to one (E:\TOOLS\Palettes\Audion DPI Manager.json and
+                     its Source\App.axaml) - the palette of the Audion Vault portal (after keepandroidopen.org) made firmer for
+                     a desktop window: slate grounds from #13171f, the azure accent #01aaff, emerald run with a forest rim,
+                     Burn Orange #f57c00 for stop and danger (Warn = Danger in spirit, the ground a step apart). The variant is
+                     App.VaultDark, it inherits Dark. The owner: "Только цвета интерфейса. У панелей только фон" - in the
+                     file panels only the ground is DPI Manager's (PanelBg, ListBg, ListTop, ListEnd); the cursor, hover,
+                     column headers, crumbs, marks and the active frame keep Audion Dark's values, written out here so
+                     COLORS can still change them for this theme alone. The rows keep their TC colours (themes.json, "dark").
+                     Run and danger buttons speak with their text and rim (Window.vault below). -->
+                <ResourceDictionary x:Key="{x:Static local:App.VaultDark}">
+                    <!-- The dots of state, the journal and the live line under it (from Audion Sync Tools). -->
+                    <SolidColorBrush x:Key="DotIdle" Color="#4a565e"/>
+                    <SolidColorBrush x:Key="DotOk" Color="#32d74b"/>
+                    <SolidColorBrush x:Key="LogPlain" Color="#c9d6de"/>
+                    <SolidColorBrush x:Key="LogMuted" Color="#7d8b95"/>
+                    <SolidColorBrush x:Key="LogHead" Color="#58a6ff"/>
+                    <SolidColorBrush x:Key="LogGood" Color="#32d74b"/>
+                    <SolidColorBrush x:Key="LogWarn" Color="#d99642"/>
+                    <SolidColorBrush x:Key="LogBad" Color="#dc6b5d"/>
+                    <SolidColorBrush x:Key="LiveSpeed" Color="#3b9cf0"/>
+                <!-- Grounds. -->
+                <SolidColorBrush x:Key="AppBg" Color="#13171f"/>
+                <SolidColorBrush x:Key="PanelBg" Color="#0e1219"/>
+                <SolidColorBrush x:Key="ListBg" Color="#171d26"/>
+                <Color x:Key="ListTop">#171d26</Color>
+                <Color x:Key="ListEnd">#0f141b</Color>
+                <SolidColorBrush x:Key="InputBg" Color="#10151c"/>
+                <SolidColorBrush x:Key="TooltipBg" Color="#161e2a"/>
+                <SolidColorBrush x:Key="ButtonBg" Color="#1f2732"/>
+                <SolidColorBrush x:Key="SwitchBg" Color="#1c242b"/>
+                <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#1c242b"/>
+                <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#1c242b"/>
+
+                <!-- Text. -->
+                <SolidColorBrush x:Key="TextMain" Color="#e0e3e7"/>
+                <SolidColorBrush x:Key="TextMuted" Color="#a9b0bd"/>
+
+                <!-- Rims. -->
+                <SolidColorBrush x:Key="BorderSoft" Color="#2c3644"/>
+                <SolidColorBrush x:Key="SwitchBorder" Color="#1f272f"/>
+                <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#2c3644"/>
+                <SolidColorBrush x:Key="FlyoutBorderThemeBrush" Color="#2c3644"/>
+                <SolidColorBrush x:Key="SepInk" Color="#2a3341"/>
+                <SolidColorBrush x:Key="GripBg" Color="#2a3341"/>
+
+                <!-- The azure accent: active tab, focus, switches. -->
+                <SolidColorBrush x:Key="Quasar" Color="#01aaff"/>
+                <SolidColorBrush x:Key="FocusBorder" Color="#1e5b85"/>
+                <SolidColorBrush x:Key="SwitchOn" Color="#14374e"/>
+
+                <!-- The panels past their ground: Audion Dark's own values. -->
+                <SolidColorBrush x:Key="CrumbInk" Color="#5b6a74"/>
+                <SolidColorBrush x:Key="RowHover" Color="#18232a"/>
+
+                <!-- Run: emerald text, forest rim; the progress of the Windows copy dialog. -->
+                <SolidColorBrush x:Key="Run" Color="#2db56a"/>
+                <SolidColorBrush x:Key="RunBg" Color="#10301a"/>
+                <SolidColorBrush x:Key="RunBorder" Color="#228b22"/>
+                <SolidColorBrush x:Key="ProgressInk" Color="#06b025"/>
+
+                <!-- Stop and danger: Burn Orange, never red. -->
+                <SolidColorBrush x:Key="WarnBg" Color="#33200c"/>
+                <SolidColorBrush x:Key="WarnBorder" Color="#8f4b0a"/>
+                <SolidColorBrush x:Key="BurnInk" Color="#f57c00"/>
+
+                <!-- Amber: pins, marks, the few buttons that matter more, sizes in the status line. -->
+                <SolidColorBrush x:Key="PinBg" Color="#3a2f1d"/>
+                <SolidColorBrush x:Key="PinBorder" Color="#b0782f"/>
+                <SolidColorBrush x:Key="AmberInk" Color="#f0c878"/>
+                <SolidColorBrush x:Key="Tangerine" Color="#f28500"/>
+                    <!-- Audion Hub Manager: the colours of Git, one meaning each across the window - the file panel, the flow of the
+                         three places, the graph, the difference and the terminal. In the index green, changed gold, new sea, deleted coral,
+                         conflict Burn Orange, renamed violet, outside the profile grey. The lanes of the graph, the grounds of a difference. -->
+                    <SolidColorBrush x:Key="GitStaged" Color="#2db56a"/>
+                    <SolidColorBrush x:Key="GitModified" Color="#e0b955"/>
+                    <SolidColorBrush x:Key="GitNew" Color="#5cc2d6"/>
+                    <SolidColorBrush x:Key="GitDeleted" Color="#dc6b5d"/>
+                    <SolidColorBrush x:Key="GitConflict" Color="#f57c00"/>
+                    <SolidColorBrush x:Key="GitRenamed" Color="#8b8cff"/>
+                    <SolidColorBrush x:Key="GitOut" Color="#5b6574"/>
+                    <SolidColorBrush x:Key="LogExplain" Color="#5cc2d6"/>
+                    <SolidColorBrush x:Key="LaneA" Color="#01aaff"/>
+                    <SolidColorBrush x:Key="LaneB" Color="#8b8cff"/>
+                    <SolidColorBrush x:Key="LaneC" Color="#e0b955"/>
+                    <SolidColorBrush x:Key="LaneD" Color="#2db56a"/>
+                    <SolidColorBrush x:Key="LaneE" Color="#e879a6"/>
+                    <SolidColorBrush x:Key="LaneF" Color="#5cc2d6"/>
+                    <SolidColorBrush x:Key="DiffAddBg" Color="#1F2DB56A"/>
+                    <SolidColorBrush x:Key="DiffDelBg" Color="#1FDC6B5D"/>
+                    <SolidColorBrush x:Key="DiffHunkBg" Color="#145CC2D6"/>
+                </ResourceDictionary>
+        </ResourceDictionary.ThemeDictionaries>
+
+        <!-- The program font and the panel font: SETTINGS swaps them at run time. -->
+        <FontFamily x:Key="FontUi">fonts:JetBrainsMono#JetBrains Mono</FontFamily>
+        <FontFamily x:Key="FontGrid">fonts:JetBrainsMono#JetBrains Mono</FontFamily>
+        <!-- The letters of a filled button, the same in every theme: white under a fill reads on dark and on light alike. -->
+        <SolidColorBrush x:Key="FillInk" Color="#ffffff"/>
+        <!-- The button that runs a form: the bright sea blue of the shell, #2e8fc4 (the owner, 14.10.2026, of the
+             amber it had first: "change the orange button to a bright Sea Blue everywhere"). -->
+        <!-- Audion Hub Manager, the owner 24.10.2026: "the button is bright, make the fill darker", then "darker still" -
+             #2e8fc4 (white on it 3.6 : 1) -> #1f6b97 (5.8 : 1) -> #185678 (7.9 : 1); a step lighter under the pointer,
+             a step darker pressed. -->
+        <SolidColorBrush x:Key="FillRun" Color="#185678"/>
+        <SolidColorBrush x:Key="FillRunOver" Color="#1f6690"/>
+        <SolidColorBrush x:Key="FillRunDown" Color="#134a68"/>
+        <!-- The quiet button: a see-through wash of a light sea blue (#7cc4ea, 9 %) and a rim of the same (22 %);
+             a step more under the pointer (the owner: "a translucent light-sea sheen and a rim"). -->
+        <SolidColorBrush x:Key="QuietBg" Color="#177cc4ea"/>
+        <SolidColorBrush x:Key="QuietRim" Color="#387cc4ea"/>
+        <SolidColorBrush x:Key="QuietBgOver" Color="#297cc4ea"/>
+        <SolidColorBrush x:Key="QuietRimOver" Color="#667cc4ea"/>
+
+        <!-- Every text size is a resource: SETTINGS rewrites them all at once
+             (App.SetSizes). Values here are the usual ones. -->
+        <x:Double x:Key="FontBase">13</x:Double>
+        <x:Double x:Key="FontPanel">12</x:Double>
+        <x:Double x:Key="FontHeader">11</x:Double>
+        <x:Double x:Key="FontButton">10</x:Double>
+        <x:Double x:Key="FontHint">8.5</x:Double>
+        <x:Double x:Key="FontSwitch">10.5</x:Double>
+        <x:Double x:Key="FontCaption">10.5</x:Double>
+        <x:Double x:Key="FontCrumb">11</x:Double>
+        <!-- Audion Build Publisher: the journal - a narrow column of long lines - and the numbers of the run. -->
+        <x:Double x:Key="FontLog">10.5</x:Double>
+        <x:Double x:Key="FontCount">17</x:Double>
+        <!-- Audion Media Tools: the scale of the window's own texts, written out at the end of the styles.
+             SETTINGS moves these with the sizes above (App.SetSizes), so no style holds a size as a number. -->
+        <x:Double x:Key="FontTitle">14</x:Double>
+        <x:Double x:Key="FontBlock">12.5</x:Double>
+        <x:Double x:Key="FontTip">12</x:Double>
+        <x:Double x:Key="FontCard">11.5</x:Double>
+        <x:Double x:Key="FontField">10.5</x:Double>
+        <x:Double x:Key="FontFine">9.5</x:Double>
+        <x:Double x:Key="FontBadge">9</x:Double>
+      </ResourceDictionary>
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+
+        <Style Selector="ToolTip">
+            <Setter Property="Background" Value="{DynamicResource TooltipBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource FocusBorder}"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontTip}"/>
+            <Setter Property="MaxWidth" Value="520"/>
+        </Style>
+
+        <!-- Button: name on top, a muted two-three word hint below (TextBlock.hint). -->
+        <Style Selector="Button">
+            <Setter Property="MinHeight" Value="26"/>
+            <Setter Property="Padding" Value="6,3"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontButton}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="Background" Value="{DynamicResource ButtonBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="ToolTip.ShowDelay" Value="1500"/>
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ButtonBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource QuasarRim}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Opacity" Value="0.7"/>
+        </Style>
+        <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ButtonBg}"/>
+            <Setter Property="Opacity" Value="0.4"/>
+        </Style>
+        <Style Selector="Button.run">
+            <Setter Property="Background" Value="{DynamicResource RunBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource RunBorder}"/>
+        </Style>
+        <Style Selector="Button.run:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RunBg}"/>
+        </Style>
+        <!-- Light amber: the buttons that matter a little more than the rest. -->
+        <Style Selector="TextBlock.plain">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="ProgressBar">
+            <Setter Property="Foreground" Value="{DynamicResource ProgressInk}"/>
+            <Setter Property="Background" Value="{DynamicResource InputBg}"/>
+            <Setter Property="MinHeight" Value="6"/>
+            <Setter Property="CornerRadius" Value="3"/>
+        </Style>
+        <!-- Audion Vault Dark: the buttons of the portal - run (F5, F11) and danger (F8, F12, MIRROR) show their colour in the
+             text and the rim over a faint fill; the window carries the class "vault" while Audion Vault Dark is on. -->
+        <Style Selector="Window.vault Button.run">
+            <Setter Property="Foreground" Value="{DynamicResource Run}"/>
+        </Style>
+        <Style Selector="Window.vault Button.run:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Foreground" Value="{DynamicResource Run}"/>
+        </Style>
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="{DynamicResource FontHint}"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,1,0,0"/>
+        </Style>
+
+        <!-- Small square tool buttons above a panel: up, reload, mask. -->
+        <Style Selector="Button.tool">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="MinHeight" Value="24"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0,4,3"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+        <Style Selector="Path.icon">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="Stretch" Value="None"/>
+            <Setter Property="Stroke" Value="{DynamicResource TextMuted}"/>
+            <!-- Drawn on a 10 grid; App.CenterIcon moves each drawing to the middle of
+                 its box and shows it IconScale times larger (the clear space in a 24
+                 button was lavish). The line is thinner in the same measure: it still
+                 looks 1.4 thick. -->
+            <Setter Property="StrokeThickness" Value="1.11"/>
+            <Setter Property="StrokeLineCap" Value="Round"/>
+            <Setter Property="StrokeJoin" Value="Round"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.small:pointerover Path.icon">
+            <Setter Property="Stroke" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="Button.tool:pointerover Path.icon">
+            <Setter Property="Stroke" Value="{DynamicResource TextMain}"/>
+        </Style>
+
+        <!-- Switch: a row of mutually exclusive buttons instead of a drop-down. -->
+        <Style Selector="ToggleButton.switch">
+            <Setter Property="MinHeight" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="Margin" Value="0,0,4,3"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontSwitch}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="Background" Value="{DynamicResource SwitchBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SwitchBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="ToolTip.ShowDelay" Value="1500"/>
+        </Style>
+        <!-- Audion Sync Tools: a section of the window - a name and a line under it, as the buttons have. -->
+        <Style Selector="ToggleButton.switch.section">
+            <Setter Property="Height" Value="NaN"/>
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Padding" Value="11,3,11,4"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="ToggleButton.switch:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SwitchBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource QuasarRim}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <Style Selector="ToggleButton.switch:checked /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.switch:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SwitchOn}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource QuasarRim}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+
+        <!-- Thin separators: tools | drives, drive row / tabs, pinned | other tabs. -->
+        <Style Selector="Border.hsep">
+            <Setter Property="BorderBrush" Value="{DynamicResource SepInk}"/>
+            <Setter Property="BorderThickness" Value="0,1,0,0"/>
+            <Setter Property="Padding" Value="0,5,0,1"/>
+            <Setter Property="Margin" Value="0,1,0,0"/>
+        </Style>
+
+        <!-- MASKS section: cards, blocks and tinted chips of the old window. -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource ListBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="12,10"/>
+        </Style>
+        <Style Selector="TextBlock.cardtitle">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontCaption}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <!-- The window of the mark (the asterisk between the panels): almost as wide as the main
+             window, and it never scrolls sideways - its rows of chips wrap. -->
+        <Style Selector="FlyoutPresenter.masks">
+            <Setter Property="MaxWidth" Value="2000"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        </Style>
+        <Style Selector="TextBox.masks, TextBox.info">
+            <Setter Property="FontSize" Value="{DynamicResource FontPanel}"/>
+            <Setter Property="Background" Value="{DynamicResource InputBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}"/>
+        </Style>
+        <Style Selector="TextBox.info">
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Menlo, monospace"/>
+            <Setter Property="MinHeight" Value="84"/>
+        </Style>
+
+
+        <!-- Square icon switches of the top bar. -->
+        <Style Selector="ToggleButton.switch.icon">
+            <Setter Property="MinWidth" Value="30"/>
+            <Setter Property="Padding" Value="6,0"/>
+        </Style>
+        <Style Selector="Path.iconfill">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="Stretch" Value="None"/>
+            <Setter Property="Fill" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="ToggleButton.switch:checked Path.icon">
+            <Setter Property="Stroke" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="ToggleButton.switch:checked Path.iconfill">
+            <Setter Property="Fill" Value="{DynamicResource TextMain}"/>
+        </Style>
+
+
+        <!-- Pinned tab: marked by colour, not by an icon as in TC. -->
+        <Style Selector="ToggleButton.switch.pinned">
+            <Setter Property="Background" Value="{DynamicResource PinBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PinBorder}"/>
+        </Style>
+        <Style Selector="ToggleButton.switch.pinned:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource PinBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PinBorder}"/>
+        </Style>
+        <Style Selector="ToggleButton.switch.pinned:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource PinBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource QuasarRim}"/>
+        </Style>
+
+        <!-- The kebab: three drawn dots of 2 px, as tall as the letters of the tab - brighter than the glyph was (owner, 28.09). -->
+        <Style Selector="Button.small">
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="MinHeight" Value="24"/>
+            <Setter Property="Padding" Value="7,0"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontSwitch}"/>
+        </Style>
+
+        <!-- Path segment: flat, no border - a trail, not a row of buttons. -->
+        <Style Selector="Button.crumb">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontCrumb}"/>
+            <Setter Property="Padding" Value="4,1"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="MinHeight" Value="20"/>
+        </Style>
+        <Style Selector="Button.crumb:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource Quasar}"/>
+        </Style>
+        <Style Selector="Button.crumb.last">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+
+        <!-- Panel frame: the active panel (copy and sync source) is sea-coloured. -->
+        <Style Selector="Border.frame">
+            <Setter Property="Background" Value="{DynamicResource PanelBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+
+        <Style Selector="TextBlock.caption">
+            <Setter Property="FontSize" Value="{DynamicResource FontCaption}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <!-- A section's scroll bar starts below the ✕ that closes the section. -->
+        <Style Selector="ScrollViewer#SectionScroll /template/ ScrollBar#PART_VerticalScrollBar">
+            <Setter Property="Margin" Value="0,34,0,0"/>
+        </Style>
+        <!-- A sheet's too (SETTINGS, ABOUT, SETUP): the ✕ stands over the corner, the bar begins under it. -->
+        <Style Selector="ScrollViewer#SheetScroll /template/ ScrollBar#PART_VerticalScrollBar">
+            <Setter Property="Margin" Value="0,22,0,0"/>
+        </Style>
+        <!-- Menus open in a window of their own and do not inherit the window's
+             font: without this they came out in the default, larger than the rest. -->
+        <Style Selector="MenuItem">
+            <Setter Property="FontFamily" Value="{DynamicResource FontUi}"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontPanel}"/>
+        </Style>
+        <!-- The icon of a menu line: Fluent holds it in a Viewbox that clips to the icon's 10 box, while
+             App.CenterIcon draws every icon 1.26 times larger than the box - the drives and ABOUT lost their
+             edges (owner, 28.09). Nothing else overflows there: the column is 16 wide. -->
+        <Style Selector="MenuItem /template/ ContentControl#PART_IconPresenter /template/ Viewbox">
+            <Setter Property="ClipToBounds" Value="False"/>
+        </Style>
+        <!-- SETTINGS: the explanations under the switches, smaller than the switches themselves. -->
+        <Style Selector="TextBlock.note">
+            <Setter Property="FontSize" Value="{DynamicResource FontButton}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,1,0,0"/>
+        </Style>
+        <Style Selector="TextBlock.status">
+            <Setter Property="FontSize" Value="{DynamicResource FontCaption}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+
+        <Style Selector="GridSplitter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MinWidth" Value="9"/>
+        </Style>
+        <!-- Lit while dragged, not on hover: the buttons between the panels sit over
+             the splitter, and hover lit and unlit it in the gaps between them. -->
+        <Style Selector="GridSplitter:pressed">
+            <Setter Property="Background" Value="{DynamicResource GripBg}"/>
+        </Style>
+
+        <!-- Behind a list (here: the journal): top to bottom, and over it a fine grain.
+             A gradient of a dozen steps over a whole panel shows as bands;
+             the grain (a percent or two of light and dark dots) dithers them
+             away, the way image editors do. -->
+        <Style Selector="Border.listbg">
+            <Setter Property="Opacity" Value="{DynamicResource ListOpacity}"/>
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                    <GradientStop Offset="0" Color="{DynamicResource ListTop}"/>
+                    <GradientStop Offset="1" Color="{DynamicResource ListEnd}"/>
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+        <!-- Folder glyph of the first column, muted as in TC. -->
+        <Style Selector="Path.folder">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="Stretch" Value="None"/>
+            <Setter Property="Fill" Value="{DynamicResource CrumbInk}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <!-- The colour picker's tab icons take the theme's text colour (they came out blank). -->
+
+        <!-- ================= Audion Build Publisher: what this window adds to the shell =================
+             Heights are multiples of 4: at the owner's 125% they come out as whole pixels. -->
+        <Style Selector="ToggleButton.switch.section TextBlock.hint, Button.step TextBlock.hint">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <!-- What sends: Burn Orange, never red - the mode itself, and every button it arms. -->
+        <Style Selector="ToggleButton.switch.burn:checked /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.switch.burn:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource WarnBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BurnInkRim}"/>
+            <Setter Property="Foreground" Value="{DynamicResource BurnInk}"/>
+        </Style>
+        <Style Selector="ToggleButton.switch.burn:checked Path.icon">
+            <Setter Property="Stroke" Value="{DynamicResource BurnInk}"/>
+        </Style>
+        <Style Selector="Button.step.burn, Button.small.burn">
+            <Setter Property="Background" Value="{DynamicResource WarnBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BurnInkRim}"/>
+            <Setter Property="Foreground" Value="{DynamicResource BurnInk}"/>
+        </Style>
+        <Style Selector="Button.step.burn Path.icon, Button.small.burn Path.icon">
+            <Setter Property="Stroke" Value="{DynamicResource BurnInk}"/>
+        </Style>
+        <!-- A number of the last run on its tile. -->
+        <Style Selector="TextBlock.num">
+            <Setter Property="FontSize" Value="{DynamicResource FontCount}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <!-- Nothing counted yet. -->
+        <Style Selector="TextBlock.num.idle">
+            <Setter Property="Foreground" Value="{DynamicResource CrumbInk}"/>
+        </Style>
+        <!-- Green is for what is ready or went; Burn Orange for what blocks or failed - never red; amber for what asks for a look. -->
+        <Style Selector="TextBlock.num.bad">
+            <Setter Property="Foreground" Value="{DynamicResource BurnInk}"/>
+        </Style>
+        <Style Selector="TextBlock.num.quiet">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <!-- A line that says a folder is not there, or that the next press sends. -->
+        <Style Selector="TextBlock.caption.bad, TextBlock.status.burn">
+            <Setter Property="Foreground" Value="{DynamicResource BurnInk}"/>
+        </Style>
+
+        <!-- ================= Audion Media Tools: what this window adds to the shell =================
+             Everything above is the shell of Audion Build Publisher as it stood on 10.10.2026 (the owner:
+             "the same look - themes, fonts, signs, the projects as a table"). -->
+
+        <!-- The paths: the pin of a path that is pinned is amber, as every pin of the Audion programs. -->
+        <Style Selector="Button.tool.on">
+            <Setter Property="Background" Value="{DynamicResource PinBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PinBorder}"/>
+        </Style>
+        <Style Selector="Button.tool.on:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource PinBg}"/>
+        </Style>
+        <Style Selector="Button.tool.on Path.icon">
+            <Setter Property="Stroke" Value="{DynamicResource AmberInk}"/>
+        </Style>
+        <!-- The sign of a button that starts something wears the colour of its button. -->
+        <Style Selector="Button.run Path.icon">
+            <Setter Property="Stroke" Value="{DynamicResource Run}"/>
+        </Style>
+        <!-- The amber notice of a run that ended with some projects failed. -->
+        <Style Selector="Border.toast">
+            <Setter Property="Background" Value="{DynamicResource PinBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PinBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="14,10"/>
+        </Style>
+        <Style Selector="Border.toast TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AmberInk}"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontPanel}"/>
+        </Style>
+
+        <!-- The header of the window: a band darker than the window, a rule under it. -->
+        <Style Selector="Border.headband">
+            <Setter Property="Background" Value="{DynamicResource PanelBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SepInk}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Padding" Value="12,9,12,9"/>
+        </Style>
+        <!-- The dot of the terminal: it breathes while an operation goes. -->
+        <Style Selector="Ellipse.livedot">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Height" Value="8"/>
+            <Setter Property="Fill" Value="{DynamicResource LiveSpeed}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Ellipse.livedot.pulse">
+            <Style.Animations>
+                <Animation Duration="0:0:1.2" IterationCount="Infinite" Easing="SineEaseInOut">
+                    <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1"/></KeyFrame>
+                    <KeyFrame Cue="50%"><Setter Property="Opacity" Value="0.2"/></KeyFrame>
+                    <KeyFrame Cue="100%"><Setter Property="Opacity" Value="1"/></KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+        <!-- A field under the pointer keeps the quiet rim it has at rest (the owner: "press the rim of a
+             field down under the pointer too"); in focus it wears the accent of a choice, one pixel. -->
+        <Style Selector="TextBox.masks:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}"/>
+            <Setter Property="Background" Value="{DynamicResource InputBg}"/>
+        </Style>
+        <Style Selector="TextBox.masks:focus /template/ Border#PART_BorderElement, TextBox.masks:focus-within /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource QuasarRim}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="{DynamicResource InputBg}"/>
+        </Style>
+        <!-- The type of the window in its sizes: what a thing is called is larger than what it says of
+             itself, and that is larger than what it counts.
+               14    the name of a page                 12.5  the name of a block, of a section
+               11.5  a card of a list                   10.5  the name of a field, a switch, the terminal
+               9.5   a line under a section, a count    9     a badge, a small word button -->
+        <Style Selector="TextBlock.pagetitle">
+            <Setter Property="FontSize" Value="{DynamicResource FontTitle}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBlock.fieldname">
+            <Setter Property="FontSize" Value="{DynamicResource FontField}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <Style Selector="TextBlock.sectionname">
+            <Setter Property="FontSize" Value="{DynamicResource FontBlock}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <!-- A fact of the last run over the terminal: its name and its value on one line, in a low badge. -->
+        <Style Selector="Border.fact">
+            <Setter Property="Background" Value="{DynamicResource PanelBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SepInk}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="9,0,10,0"/>
+            <Setter Property="Height" Value="24"/>
+        </Style>
+        <Style Selector="TextBlock.num.fact">
+            <Setter Property="FontSize" Value="{DynamicResource FontField}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <!-- A section of the window: its line of what it is for, quieter than its name. -->
+        <Style Selector="ToggleButton.switch.section TextBlock.hint">
+            <Setter Property="Margin" Value="0,3,0,0"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+        </Style>
+        <!-- A tool button that removes - an operation of the working folders: the size of its
+             neighbours, in Burn Orange as the other buttons that remove. -->
+        <Style Selector="Button.tool.burn">
+            <Setter Property="Background" Value="{DynamicResource WarnBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BurnInkRim}"/>
+        </Style>
+        <Style Selector="Button.tool.burn Path.icon">
+            <Setter Property="Stroke" Value="{DynamicResource BurnInk}"/>
+        </Style>
+
+        <!-- ================= Audion Hub Manager: what this window adds to the shell =================
+             The colours of Git (GitStaged, GitModified, GitNew, GitDeleted, GitConflict, GitRenamed, GitOut) are in the four
+             theme dictionaries above; here are the shapes that wear them. -->
+        <!-- The name of the program at the top left is ABOUT: flat on its band, a rim under the pointer and while ABOUT is open. -->
+        <Style Selector="Button.brand">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Margin" Value="-8,0,0,0"/>
+            <Setter Property="CornerRadius" Value="7"/>
+        </Style>
+        <Style Selector="Button.brand:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}"/>
+        </Style>
+        <Style Selector="Button.brand.on /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="{DynamicResource QuasarRim}"/>
+        </Style>
+        <!-- The project: a field-like button that opens the registry. -->
+        <Style Selector="Button.small.project">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="Padding" Value="9,0"/>
+            <Setter Property="Background" Value="{DynamicResource InputBg}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontPanel}"/>
+        </Style>
+        <Style Selector="Border.vsep">
+            <Setter Property="Width" Value="1"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Background" Value="{DynamicResource SepInk}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <!-- A pill: a short state - "4 изм.", "чисто", "нет входа" - in the colour of what it says. -->
+        <Style Selector="Border.pill">
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Padding" Value="7,0"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SepInk}"/>
+        </Style>
+        <Style Selector="Border.pill TextBlock">
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Border.pill.ok"><Setter Property="BorderBrush" Value="{DynamicResource GitStagedRim}"/></Style>
+        <Style Selector="Border.pill.ok TextBlock"><Setter Property="Foreground" Value="{DynamicResource GitStaged}"/></Style>
+        <Style Selector="Border.pill.mod"><Setter Property="BorderBrush" Value="{DynamicResource GitModifiedRim}"/></Style>
+        <Style Selector="Border.pill.mod TextBlock"><Setter Property="Foreground" Value="{DynamicResource GitModified}"/></Style>
+        <Style Selector="Border.pill.bad"><Setter Property="BorderBrush" Value="{DynamicResource BurnInkRim}"/></Style>
+        <Style Selector="Border.pill.bad TextBlock"><Setter Property="Foreground" Value="{DynamicResource BurnInk}"/></Style>
+        <Style Selector="Border.pill.info"><Setter Property="BorderBrush" Value="{DynamicResource GitNewRim}"/></Style>
+        <Style Selector="Border.pill.info TextBlock"><Setter Property="Foreground" Value="{DynamicResource GitNew}"/></Style>
+        <Style Selector="Border.pill.vi"><Setter Property="BorderBrush" Value="{DynamicResource GitRenamedRim}"/></Style>
+        <Style Selector="Border.pill.vi TextBlock"><Setter Property="Foreground" Value="{DynamicResource GitRenamed}"/></Style>
+        <!-- A layer of the project: ИСХОДНИК, GIT-КОПИЯ, DOCS - a switch a little taller than the others. -->
+        <Style Selector="ToggleButton.switch.layer">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="Padding" Value="9,0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBlock.arrowword">
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+            <Setter Property="Foreground" Value="{DynamicResource CrumbInk}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <!-- A command to be finished in the command line: what to put in its places. -->
+        <Style Selector="Border.templatenote">
+            <Setter Property="Background" Value="{DynamicResource SwitchOn}"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="9,6"/>
+        </Style>
+        <Style Selector="Border.templatenote TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource LogExplain}"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+        </Style>
+        <Style Selector="Border.templatenote Path.icon"><Setter Property="Stroke" Value="{DynamicResource LogExplain}"/></Style>
+        <!-- The next step, in plain words, in the state row: amber, as a hint is everywhere in the Audion programs. -->
+        <Style Selector="Path.icon.coach"><Setter Property="Stroke" Value="{DynamicResource AmberInk}"/></Style>
+        <Style Selector="TextBlock.coach">
+            <Setter Property="Foreground" Value="{DynamicResource AmberInk}"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontCaption}"/>
+        </Style>
+        <!-- A button of the frequent operations under the page: the dot of its risk, its name, its key. -->
+        <!-- One height for the whole bar: a button with its command under the name and one without stand level. -->
+        <Style Selector="Button.op">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontSwitch}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.op.sm">
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="MinHeight" Value="26"/>
+            <Setter Property="Padding" Value="8,0"/>
+        </Style>
+        <Style Selector="TextBlock.opcmd">
+            <Setter Property="FontFamily" Value="{DynamicResource FontGrid}"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Foreground" Value="{DynamicResource LogExplain}"/>
+            <Setter Property="Opacity" Value="0.85"/>
+        </Style>
+        <Style Selector="Button.op.fill TextBlock.opcmd">
+            <Setter Property="Foreground" Value="{DynamicResource FillInk}"/>
+            <Setter Property="Opacity" Value="0.75"/>
+        </Style>
+        <Style Selector="Button.op.burn TextBlock.opcmd">
+            <Setter Property="Foreground" Value="{DynamicResource BurnInk}"/>
+            <Setter Property="Opacity" Value="0.75"/>
+        </Style>
+        <Style Selector="Ellipse.risk">
+            <Setter Property="Width" Value="6"/>
+            <Setter Property="Height" Value="6"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Border.key">
+            <Setter Property="BorderBrush" Value="{DynamicResource SepInk}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="4,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Border.key TextBlock">
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Foreground" Value="{DynamicResource CrumbInk}"/>
+        </Style>
+        <Style Selector="Button.op.fill">
+            <Setter Property="Background" Value="{DynamicResource FillRun}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource FillRun}"/>
+            <Setter Property="Foreground" Value="{DynamicResource FillInk}"/>
+            <Setter Property="Padding" Value="18,0"/>
+        </Style>
+        <Style Selector="Button.op.fill TextBlock"><Setter Property="Foreground" Value="{DynamicResource FillInk}"/></Style>
+        <Style Selector="Button.op.fill Border.key"><Setter Property="BorderBrush" Value="#66FFFFFF"/></Style>
+        <Style Selector="Button.op.fill:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FillRunOver}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource FillRunOver}"/>
+            <Setter Property="Foreground" Value="{DynamicResource FillInk}"/>
+        </Style>
+        <Style Selector="Button.op.fill:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FillRunDown}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource FillRunDown}"/>
+        </Style>
+        <Style Selector="Button.op.burn"><Setter Property="BorderBrush" Value="{DynamicResource WarnBorder}"/></Style>
+        <Style Selector="Button.op.burn TextBlock.opname"><Setter Property="Foreground" Value="{DynamicResource BurnInk}"/></Style>
+        <Style Selector="Button.op.burn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource WarnBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BurnInkRim}"/>
+        </Style>
+        <Style Selector="Button.op.quiet">
+            <Setter Property="Background" Value="{DynamicResource QuietBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource QuietRim}"/>
+        </Style>
+        <Style Selector="Button.op.quiet:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource QuietBgOver}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource QuietRimOver}"/>
+        </Style>
+        <!-- A card of the flow of the three places of Git: the working folder, the index, the history, the server. -->
+        <Style Selector="ToggleButton.switch.stage">
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="Border.stageicon">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="{DynamicResource InputBg}"/>
+        </Style>
+        <Style Selector="TextBlock.stagename">
+            <Setter Property="FontSize" Value="{DynamicResource FontSwitch}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="TextBlock.stageline">
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+        <Style Selector="TextBlock.flowcmd">
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+            <Setter Property="Foreground" Value="{DynamicResource LogExplain}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <!-- The letter of a file: what Git says of it, in its colour (set in code). -->
+        <Style Selector="Border.st">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="17"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Border.st TextBlock">
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <!-- The lists of the pages - files, commits, branches, remotes, projects: rows without a rim, the chosen one in the accent. -->
+        <Style Selector="ListBox.rows">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        <Style Selector="ListBox.rows ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="ListBox.rows ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RowHover}"/>
+        </Style>
+        <Style Selector="ListBox.rows ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, ListBox.rows ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, ListBox.rows ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SwitchOn}"/>
+        </Style>
+        <Style Selector="TextBlock.grouphead">
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource CrumbInk}"/>
+            <Setter Property="LetterSpacing" Value="0.6"/>
+        </Style>
+        <Style Selector="TextBlock.colhead">
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource CrumbInk}"/>
+        </Style>
+        <Style Selector="TextBlock.cell">
+            <Setter Property="FontSize" Value="{DynamicResource FontPanel}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+        <Style Selector="TextBlock.cell.quiet"><Setter Property="Foreground" Value="{DynamicResource CrumbInk}"/></Style>
+        <!-- The column of projects: a step smaller than the rows of a page (the owner, 25.10.2026: "the font can be 1 pt smaller"). -->
+        <Style Selector="TextBlock.cell.side"><Setter Property="FontSize" Value="{DynamicResource FontCrumb}"/></Style>
+        <Style Selector="TextBlock.mono"><Setter Property="FontFamily" Value="{DynamicResource FontGrid}"/></Style>
+        <!-- A block of a page: a frame with a stripe of its colour at the left and its name in the first line. -->
+        <Style Selector="Border.pblock">
+            <Setter Property="Background" Value="{DynamicResource ListBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SepInk}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        <Style Selector="Border.pane">
+            <Setter Property="Background" Value="{DynamicResource ListBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SepInk}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+        </Style>
+        <Style Selector="TextBlock.blocktitle">
+            <Setter Property="FontSize" Value="{DynamicResource FontFine}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="LetterSpacing" Value="0.6"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <!-- A chip of a choice in a block (a type of a commit, a platform): lower than a switch, its own tone. -->
+        <Style Selector="ToggleButton.switch.chip">
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="MinHeight" Value="22"/>
+            <Setter Property="Padding" Value="7,0"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="Background" Value="{DynamicResource InputBg}"/>
+        </Style>
+        <!-- A tick of a block: a small box and its words, on one line. -->
+        <Style Selector="CheckBox.tick">
+            <Setter Property="FontSize" Value="{DynamicResource FontSwitch}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="MinHeight" Value="22"/>
+            <Setter Property="Padding" Value="5,0,0,0"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="CheckBox.tick /template/ Border#NormalRectangle">
+            <Setter Property="BorderBrush" Value="{DynamicResource TextMutedRim}"/>
+        </Style>
+        <!-- The big number of a tile (the plan of the mirror). -->
+        <Style Selector="TextBlock.bignum">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <!-- A message of a commit as it will be written: in a frame, the parts in their colours. -->
+        <Style Selector="Border.preview">
+            <Setter Property="Background" Value="{DynamicResource InputBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="9,5"/>
+        </Style>
+    </Application.Styles>
+</Application>

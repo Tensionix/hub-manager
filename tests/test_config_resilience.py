@@ -24,7 +24,7 @@ def test_load_json_safe_reports_nothing_for_a_missing_file(tmp_path: Path) -> No
     assert (payload, error) == ({"a": 1}, "")
 
 
-def test_registry_survives_a_broken_file_and_still_yields_a_project(tmp_path: Path) -> None:
+def test_registry_survives_a_broken_file(tmp_path: Path) -> None:
     # A stray comma used to abort startup with a traceback before the window opened.
     config = tmp_path / "projects.json"
     config.write_text('{ "projects": [ , ] }', encoding="utf-8")
@@ -33,7 +33,6 @@ def test_registry_survives_a_broken_file_and_still_yields_a_project(tmp_path: Pa
 
     assert registry.projects == []
     assert registry.load_error
-    assert registry.active_project().id == "unconfigured"
 
 
 def test_registry_skips_one_broken_record_but_keeps_the_others(tmp_path: Path) -> None:
@@ -46,7 +45,7 @@ def test_registry_skips_one_broken_record_but_keeps_the_others(tmp_path: Path) -
     registry = load_project_registry(config)
 
     assert [project.id for project in registry.projects] == ["good"]
-    assert registry.active_project().id == "good"
+    assert registry.active_project_id == "good"
 
 
 def test_apply_refuses_a_plan_whose_roots_overlap(tmp_path: Path) -> None:

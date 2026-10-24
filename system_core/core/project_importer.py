@@ -130,6 +130,13 @@ def _unique_id(base: str, used_ids: set[str]) -> str:
     return candidate
 
 
+def _is_repository(path: Path) -> bool:
+    """A .git that git would take: a folder with HEAD, or a file pointing to one (a worktree, a submodule). An empty
+    .git folder is not a sign of a project."""
+    git = path / ".git"
+    return (git / "HEAD").is_file() or git.is_file()
+
+
 def _score_project_root(path: Path) -> int:
     if not path.is_dir():
         return 0
@@ -138,7 +145,7 @@ def _score_project_root(path: Path) -> int:
     lower_names = {name.lower() for name in names}
     score = 0
 
-    if ".git" in lower_names:
+    if _is_repository(path):
         score += 6
 
     for filename in ROOT_FILES_HIGH:
@@ -206,7 +213,7 @@ def _has_explicit_root_marker(path: Path) -> bool:
     except OSError:
         return False
     explicit_files = {name.lower() for name in ROOT_FILES_HIGH | ROOT_FILES_MEDIUM}
-    return ".git" in lower_names or bool(explicit_files & lower_names) or any(path.glob("*.sln"))
+    return _is_repository(path) or bool(explicit_files & lower_names) or any(path.glob("*.sln"))
 
 
 def _walk_project_candidates(root: Path, max_depth: int) -> list[tuple[Path, int, int]]:
@@ -235,6 +242,12 @@ def _walk_project_candidates(root: Path, max_depth: int) -> list[tuple[Path, int
 
 
 def _best_project_root(root: Path, max_depth: int) -> tuple[Path, int, int] | None:
+    # A folder marked as a project is that project: the samples and fixtures deeper in it are not. Only a folder
+    # without marks (a launcher around a project, an unpacked archive) is searched inside.
+    if _has_explicit_root_marker(root):
+        score = _score_project_root(root)
+        if score >= MIN_PROJECT_SCORE:
+            return root, score, 0
     candidates = _walk_project_candidates(root, max_depth)
     if not candidates:
         return None

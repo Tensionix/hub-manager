@@ -13,7 +13,7 @@ DOCS_VIEW_PROFILE_ID = "markdown_only_projection"
 def docs_target(app_root: Path, project: ProjectEntry) -> Path:
     if project.docs_path is not None:
         return project.docs_path.expanduser()
-    raise ValueError(f"Project '{project.id}' has no docs_path configured in projects.json")
+    raise ValueError(f"Project '{project.id}' has no docs_path configured in the registry")
 
 
 def plan_docs_view(app_root: Path, project: ProjectEntry) -> dict[str, Any]:

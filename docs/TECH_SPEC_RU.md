@@ -1,371 +1,278 @@
-# TECH SPEC RU — Audion Hub Manager
+# Audion Hub Manager — устройство
+
+[English](TECH_SPEC_EN.md) · [О программе](README_RU.md) · [Консольная команда](CLI_RU.md) · [Решения](DECISIONS_RU.md)
 
 **Содержание**
 
-- [1. Назначение](#1-назначение)
-- [2. Архитектурный принцип](#2-архитектурный-принцип)
-- [2.1. Реестр проектов](#21-реестр-проектов)
-- [3. MIRROR Engine](#3-mirror-engine)
-- [4. Projection Profiles](#4-projection-profiles)
-- [5. UI Layout](#5-ui-layout)
-- [6. Core Панели](#6-core-панели)
-- [7. Terminal Dock](#7-terminal-dock)
-- [8. Git Engine](#8-git-engine)
-- [9. Auth Policy](#9-auth-policy)
-- [10. Storage Policy](#10-storage-policy)
-- [11. Testing](#11-testing)
-- [12. Documentation Artifacts](#12-documentation-artifacts)
+- [Части](#части)
+- [Окно](#окно)
+- [Канон Git](#канон-git)
+- [Движок](#движок)
+- [Реестр и слои](#реестр-и-слои)
+- [Зеркало](#зеркало)
+- [Профили](#профили)
+- [Вход и Forgejo](#вход-и-forgejo)
+- [Хранилище](#хранилище)
+- [Коммит отмеченных](#коммит-отмеченных)
+- [Лаборатория](#лаборатория)
+- [Проверки](#проверки)
+- [Сборщик](#сборщик)
+- [Документы](#документы)
 
-## 1. Назначение
+## Части
 
-Audion Hub Manager — локальный commander-интерфейс для связки:
-
-```text
-Full Project -> Hub Projection -> Git -> GitHub/GitLab/Codeberg/local bundle
-                  ^
-                  VS Code / Docs layer / NiceGUI UI
+```
+Start.exe ──▶ App\AudionHubManager.exe  (окно: C#, Avalonia, .NET 10 внутри папки)
+                 │                                  │
+                 │ git — сам, по канону             │ hub_cli.cmd — один JSON на команду
+                 ▼                                  ▼
+          репозиторий выбранного слоя     system_core\cli.py → system_core\core\*  (Python 3.12 из runtime\)
 ```
 
-Приложение не заменяет VS Code и не привязывает пользователя к Obsidian,
-LogSeq или другому Markdown-инструменту. Оно делает MIRROR, Git-состояние,
-diff, commit, safety scan и checkpoint flow видимыми в одном окне.
+Окно — лицо консольной команды: реестр, зеркало, проверки, пакеты, лаборатория и Forgejo идут через `hub_cli.cmd`, и
+то же самое делается без окна. Git окно зовёт само: показанная команда и есть урок, а состояние репозитория (status,
+граф, ветки) читается часто.
 
-## 2. Архитектурный принцип
+## Окно
 
-```text
-Project first.
-Hub follows.
+| Где | Что |
+|---|---|
+| `Source\MainWindow.*.cs` | разделы: Changes, History, Branches, Sync, Mirror, Projects, Service; заголовок и слой — Project, колонка проектов — Side, коммит отмеченных — Marked, панель папок — Folders, терминал — Command, Run |
+| `Source\Views\FadeBox.cs` | текст или строка, которые не помещаются, гаснут на последних 16 px вместо многоточия |
+| `Source\Core\Git.cs` | тихое чтение для рисования: `status --porcelain=v2 -b`, `log --format`, `for-each-ref` |
+| `Source\Core\Canon.cs` | канон из `hub_cli canon`: подписи, подсказки, риск |
+| `Source\Core\Hub.cs` | вызов `hub_cli.cmd` и чтение его JSON; строка stdin (токен) уходит только в процесс |
+| `Source\Core\Runner.cs`, `ChildJob.cs` | запуск команд с живым выводом; задание Windows: СТОП и закрытие окна гасят всё дерево процессов |
+| `Source\Views\GraphCell.cs` | граф коммитов: полосы веток по родителям |
+| `Source\App.axaml` | четыре темы и цвета Git: в индексе, изменён, новый, удалён, конфликт, переименован, вне профиля |
+| `Source\Ps\` | PowerShell 7 программы, `App\AudionPs.exe` (Microsoft.PowerShell.SDK) |
+
+Каждая Git-команда кнопки идёт с окружением: `GIT_TERMINAL_PROMPT=0` (ничего не ждёт пароля), `GIT_EDITOR=true` и
+`GIT_SEQUENCE_EDITOR=true` (редактор, которого окно не покажет, не открывается), цвета — через `GIT_CONFIG_COUNT`
+(`color.ui=always`, `core.quotepath=false`), поэтому показанная команда остаётся той, что набирают руками. Сообщения
+git в потоке ошибок — не ошибка: исход говорит код выхода.
+
+Опасные операции спрашивают с командой целиком, незакоммиченным и способом отмены. Набранная руками строка делится на
+вызовы Git — режим GIT или каждый `git` между `&&`, `||`, `;`, `|` и переводами строки в PS и CMD, — и каждый судится по
+доводам в любом порядке (`Source\Core\TypedCommand.cs`): `reset --hard` и прочие режимы `reset`, `commit --amend`,
+`restore` рабочей папки, `checkout --`, `switch -f`, `clean -f`, `push` с силой, удалением, зеркалом или refspec с `+`/`:`,
+`branch -D`, `stash drop`, `rebase`, `filter-branch`, `reflog expire`, `gc --prune`, `update-ref -d`, `rm` без `--cached`,
+`tag -d`. Что есть в каноне, спрашивает его словами, `reset --hard` — набранным RESET; рекурсивное удаление PS и CMD
+ловит фильтр слов.
+
+Сборка: `install\Build-App.cmd` — тесты движка и канона, публикация PowerShell и окна (win-x64, вместе с .NET), затем
+самопроверка собранного окна (`--self-test --just-built`): консольная команда отвечает, канон читается и у каждой
+операции есть слова на двух языках, у темы есть цвета Git, номер exe совпадает с `config\version.json`. Сборка верит
+только строке `[OK] all checks passed` отчёта.
+
+## Канон Git
+
+`system_core\core\git_canon.py` — 63 записи. Поля записи: `id`, команда с местами (`{path}`, `{commit}`, `{branch}`,
+`{remote}`, `{message}`, `{tag}`, `{paths}` — список), риск, режим, раздел окна, слова RU и EN «что делает» и «как
+отменить». Подпись кнопки (`short`) — команда без мест и тихих ключей: `git restore --staged`, `git switch -c`.
+
+| Риск | | Режим | |
+|---|---|---|---|
+| `read` | ничего не меняет | `run` | сразу |
+| `local` | меняет этот репозиторий | `ask` | после вопроса |
+| `net` | говорит с сервером | `template` | в строку терминала, дописать самому |
+| `danger` | может потерять работу | | |
+
+Канон читают окно (`hub_cli canon`), тесты (`tests\test_git_canon.py` гоняет каждую запись на свежей копии
+лаборатории) и документы (`hub_cli canon --docs` пишет таблицы между `<!-- canon:… -->` и `<!-- /canon -->`;
+`tests\test_canon_docs.py` падает, если таблица отстала). Другой Git-команды у программы нет.
+
+## Движок
+
+| Модуль `system_core\core\` | Что |
+|---|---|
+| `hub_ops.py` | реестр и слои, проверка путей профилем, пакеты, workspace, адреса и `remotes.json`, лаборатория в реестре, инструменты машины, Корзина |
+| `project_registry.py`, `project_importer.py` | чтение реестра; поиск корней проектов в папке и слияние с реестром |
+| `projection_engine.py`, `scan_engine.py`, `mask_engine.py`, `copy_engine.py` | зеркало: обход по профилю, маски, копирование, суммы BLAKE3, отчёты |
+| `docs_view.py` | слой DOCS: Markdown и тексты ИСХОДНИКА по профилю `markdown_only_projection` |
+| `safety.py` | поиск секретов и тяжёлых файлов |
+| `storage_layout.py` | корни хранилища и их роли |
+| `git_engine.py` | `git status` для пакетов, теги версий серии, проверка адреса remote |
+| `git_credentials.py` | протокол `git credential`: fill, approve, reject |
+| `forgejo_api.py`, `forgejo_service.py` | API Forgejo и Gitea, вход токеном, репозитории |
+| `auth_doctor.py` | проверка доступа: Git, имя и почта, gh, glab, SSH, адреса remote |
+| `external_apps.py` | путь к VS Code этой машины |
+| `output_decode.py` | раскодировка вывода (UTF-8, OEM, кириллица) |
+| `lab.py`, `git_canon.py`, `canon_docs.py` | лаборатория, канон, таблицы канона в документах |
+
+## Реестр и слои
+
+`<корень проектов>\hub_projects.json` (`project_registry.registry_path`): у каждого корня свой реестр. `active_project_id`
+и `projects` — записи с `id`, `title`, `source_path`, `projection_path`, `docs_path`, `profile`, `default_branch`,
+`notes`. Относительный путь считается от папки реестра; пути внутри корня программа пишет от него, остальные — полностью,
+и корень переезжает вместе со своим реестром. Запись без GIT-КОПИИ получает `Hub Data\<название>` рядом с программой —
+как при поиске. Испорченный файл не мешает запуску: уцелевшие записи читаются, о проблеме сказано в ответе
+(`load_error`). Реестр — данные этой машины, в git он не идёт. Если его нет, программа заводит его: из
+`config\projects.json`, если реестр лежит там (пути пересчитываются от папки программы к корню, старый файл удаляется);
+для корня поставки — из `config\projects.example.json`; для своего корня — пустым.
+
+`projects export ФАЙЛ` пишет реестр в файл с полными путями; `projects import ФАЙЛ` пересчитывает пути файла от его
+места к корню и дописывает проекты, которых в реестре нет (`--replace` — список файла целиком).
+
+У каждого слоя (`source`, `mirror`, `docs`) — состояние репозитория: `own` (свой), `parent` (папка внутри чужого: команды
+ушли бы туда), `none`.
+
+## Зеркало
+
+```
+обойти ИСХОДНИК по профилю → обойти GIT-КОПИЮ → сравнить пути
+1 создать разрешённые папки
+2 скопировать и обновить файлы
+3 проставить времена изменения
+4 если ошибок и расхождений нет — удалить лишнее в GIT-КОПИИ
+5 убрать опустевшие папки
+6 маркеры пустых папок — только если профиль велит (`preserve_empty_dirs`); поставляемые профили их не ставят
 ```
 
-Full Project остаётся источником истины. Hub Data — фильтрованная техническая
-проекция. Docs — необязательная человекочитаемая витрина.
+ИСХОДНИК не меняется; `.git/**` защищён от обхода, удаления и обслуживания. План перепроверяется перед записью: устаревший
+или поправленный план не удалит ничего за пределами своей области. Ни один обход не идёт по символической ссылке или
+junction (`lstat`, метка reparse): такая папка или файл пропускаются, а каждая запись, копия и удаление раскрывают свой
+путь и отказывают тому, что ведёт за пределы своего слоя. Папка или файл, которые обход не смог прочитать, становятся
+пунктом `error` плана (`source_unreadable`, `mirror_unreadable`), и шаг 4 ничего не удаляет; сверка считает это ошибкой.
+Отчёты — `logs\<проект>\ГГГГММДД_ЧЧММСС_микросекунды_вид.json`.
+
+| Сравнение | Как |
+|---|---|
+| `quick` | размер и время |
+| `safe`, `safe_blake3` | суммы — только при совпавшем размере и разном времени |
+| `strict`, `strict_blake3`, `metadata_then_blake3` | суммы для всех файлов одного размера, даже при совпавшем времени; `metadata_then_blake3` — значение по умолчанию |
+
+Суммы помечены алгоритмом: `blake3:…`; `sha256:…` — запасной вариант, если BLAKE3 нет. Любое применение с ошибками или
+расхождениями возвращает код 1.
+
+## Профили
+
+`config\projection_profiles.json`:
+
+| Профиль | Что |
+|---|---|
+| `audion_python_project_projection` | проект любого рода; 476 масок включения, 243 исключения, 89 папок вне обхода |
+| `audion_python_project_projection_strict` | наследует проектный профиль (`extends`), сверка строгая |
+| `markdown_only_projection` | только Markdown и тексты — слой DOCS |
+
+Профиль проекта пропускает исходники, документы и настройки распространённых языков и сборок: Python, веб (JS, TS,
+фреймворки), C и C++, .NET, JVM, Go, Rust, Swift, Dart и Flutter, Ruby, PHP, Elixir, Haskell, R, Julia, Lua, оболочки и
+PowerShell, SQL, Terraform, Nix, Docker и Kubernetes, CMake, Bazel, Meson, Qt (формы, ресурсы, QML), установщики WiX, Inno
+Setup и NSIS, переводы, шаблоны, схемы текстом; lock-файлы зависимостей, CI (GitHub, GitLab,
+Forgejo, Gitea и другие), настройки линтеров и форматтеров, общие `.vscode\tasks.json`, `launch.json`, `extensions.json`,
+`.devcontainer`; текстовые файлы Unity и Godot. Картинки и шрифты исходников проходят до мегабайта. Не пропускает
+зависимости и кэши (`node_modules`, `.venv`, `target`, `obj`, `.gradle`, `.next` и десятки других),
+сборки и пакеты, архивы и образы дисков, медиа и файлы графических программ, базы данных, наборы данных и обученные модели,
+журналы и временные файлы, `.env`, закрытые ключи, ключи и токены в текстовых файлах (`api_key_*.txt`, `token.json`),
+хранилища паролей, состояние Terraform, машинные `*.local.*` и `*.user`; у программ Audion — собранное окно `App\`, его
+состояние, пакет лицензий и манифест выпуска.
+
+Над профилем стоит `.gitignore` самого проекта: что он прячет, зеркало не обходит и не копирует (`respect_gitignore`).
+Проект со своим репозиторием спрашивается как есть — закоммиченное не прячется никогда; любая другая папка — через
+временную пустую папку git, чтобы считался только её `.gitignore`, а не репозитория, внутри которого она лежит. Спрятанные
+папки первых двух уровней отсекаются до обхода: дерево сборки в `build-ui\` не обходится вовсе.
+
+Сотни масок сверяются за доли секунды: точные имена — по набору, окончания вида `*.py` — одной проверкой окончания,
+остальные — одним общим выражением (`mask_engine._matcher`); ответ тот же, что у перебора масок по одной
+(`tests\test_mask_engine.py`).
+
+| Ключ профиля | Что делает |
+|---|---|
+| `dry_run_default: true` | применение без `--apply` только показывает |
+| `require_include_filter: true`, `min_include_globs` | без масок планирование падает |
+| `allow_unfiltered_full` | единственный способ разрешить полную копию; ни один поставляемый профиль его не ставит |
+| `mirror_scope: "filtered"` | GIT-КОПИЯ приводится к ИСХОДНИКУ только по маскам |
+| `compare_mode` | способ сравнения; поставляемые профили — `strict_blake3` |
+| `small_include_globs`, `small_include_max_file_bytes` | маленькие файлы, которые проходят до своего предела (картинки и шрифты — до 1 МБ) |
+| `hide_dirs` | папки, в которые обход не заходит |
+| `exclude_dir_contents` | папки, которые остаются пустыми с маркером: служебные, сборки, выводы |
+| `extends` | профиль берёт другой и меняет свои ключи |
+| `preserve_empty_dirs`, `marker_file` | держать пустые папки маркером; в поставляемых профилях выключено — папки программы восстанавливает `install\init_folders.cmd` |
+| `respect_gitignore` | не копировать спрятанное `.gitignore` проекта; по умолчанию включено |
+| `output_dirs` | папки-догадки: сборки и зависимости у большинства проектов, исходники у некоторых (`app\` Next.js, `build\` Electron, `bin\` сценариев, `vendor\` Go); не идут в копию, только если у проекта нет своего `.gitignore` |
+| `extensionless_text_bytes` | файл без расширения, которого нет в списке (`install`, `UNLICENSE`, хук `.husky\pre-commit`), проходит, если он не больше предела и это текст: в первых 8 КБ нет нулевого байта |
+
+Правило папки — имя где угодно (`logs`), путь от корня (`install/download`) или имя только у корня с `/` впереди
+(`/App` — собранное окно, а не папка `app` с исходниками глубже). Имя может быть маской: `cmake-build-*`.
+
+Тот же профиль решает, что идёт в коммит: `hub_cli check-paths` перед `add` и `commit`, файл вне профиля в индекс не
+кладётся.
+
+## Вход и Forgejo
+
+Программа не хранит паролей, токенов и закрытых ключей. Вход — обычными средствами: ключи SSH и ssh-agent, Git Credential
+Manager, GitHub CLI, GitLab CLI. Проверки не интерактивны: `GIT_TERMINAL_PROMPT=0`, SSH с `BatchMode=yes`.
+
+Свои серверы Forgejo и Gitea — `config\forgejo_hosts.json`: адрес, пользователь и порт SSH, вид адреса, логин; без
+токенов. Это данные машины, как реестр: в git файл не идёт, чистильщик выпуска его убирает. Учётная запись — личный токен доступа с заголовком `Authorization: token …`: он проверяется запросом
+`/api/v1/user` и отдаётся помощнику учётных данных Git (`git credential approve`); дальше `git push` по HTTPS берёт его
+сам. Вход OAuth2 не используется: в Forgejo у OAuth2 ещё нет областей, такой токен даёт права администратора учётной
+записи, живёт недолго и требует отдельного механизма для `git push`.
+
+## Хранилище
+
+`config\storage_layout.json` — корни и их роли; `${APP_ROOT}` — папка программы:
+
+| Корень | Роль | Как поставляется |
+|---|---|---|
+| `manager_root` | сама программа | `${APP_ROOT}` |
+| `hub_data_root` | GIT-КОПИИ проектов | `${APP_ROOT}/../Hub Data` |
+| `docs_root` | слой DOCS | `${APP_ROOT}/../Hub Docs` |
+| `full_projects_root` | живые проекты, источник правды | `${APP_ROOT}/..` |
+
+`hub_cli storage` проверяет, что корни есть, ни один не лежит внутри другого, GIT-КОПИЯ каждого проекта — под
+`hub_data_root`, а DOCS — под `docs_root`. DOCS необязателен: корень DOCS нужен, только когда слой есть хотя бы у одного
+проекта. Демонстрационный проект и учебная лаборатория держат копии внутри программы и раскладкой не проверяются.
+
+Корень живых проектов можно выбрать для одной машины: `hub_cli storage --projects-root ПАПКА` пишет его в
+`config\storage_layout.local.json` (рядом с программой — как `${APP_ROOT}/../…`, в другом месте — полностью; внутри
+GIT-КОПИЙ или DOCS — отказ), `--reset-projects-root` возвращает корень поставки. Файл не идёт в git, чистильщик выпуска
+его убирает (`*.local.json`): выпуск везёт раскладку программы, а не машины, где его собирали. Смена корня отвечает
+кодом 0, когда корень записан; что из проектов нового корня раскладка не держит, говорит `off_layout` (`source`,
+`projection`, `docs` — списки `id`), и окно называет их строкой под командой.
 
-Hub не создаёт документацию из воздуха. Он зеркалит то, что уже есть в проекте:
-`README`, `TECH_SPEC`, `AGENTS`, `CHANGELOG`, `docs/`, `prompts/`, `reports/`
-и разрешённый код/конфиги.
+## Коммит отмеченных
 
-## 2.1. Реестр проектов
+`Source\MainWindow.Marked.cs`: контрольная точка каждого отмеченного в колонке проекта по `SKILL.md` — `mirror apply
+--apply`, `mirror verify`, `safety --layer mirror`, `check-paths --layer mirror --stdin` по изменённым путям, `add` и
+`commit` канона в GIT-КОПИИ. Шаги идут через тот же исполнитель, что и кнопки; следующий шаг ставится, когда предыдущий
+закончен целиком (`Done` → `Dispatcher.Post`). Проект без своего репозитория в GIT-КОПИИ пропускается, отказ шага
+останавливает только свой проект, СТОП — всю цепочку.
 
-`config/projects.json` описывает не один общий Source-контейнер, а набор
-отдельных проектов. Dropdown `Проект` переключает активную запись целиком:
+## Лаборатория
 
-```text
-source_path     -> Project layer
-projection_path -> Mirror / Hub Data layer
-docs_path       -> Docs layer
-profile         -> правила MIRROR и commit allowlist
-default_branch  -> ветка Git-команд
-```
+`system_core\core\lab.py` строит десять репозиториев со своими часами: автор, дата и байты каждого файла постоянны, поэтому
+хэши коммитов одинаковы на любой машине и в каждом прогоне. `_servers\` — bare-репозитории, «сервер» урока о remote.
 
-UI-слой `Project` над деревом показывает `source_path` выбранной записи. Это
-сознательно отличается от общей идеи Source-папки/контейнера, где могут лежать
-десятки проектов.
-
-`Scan projects` сканирует родительскую папку с множеством проектов, определяет
-реальные корни по project markers и развитой структуре файлов языков
-программирования, пропускает launcher-only `.cmd` папки и добавляет
-недостающие записи в `projects.json`. Hub/Data и Docs ветки, попавшие внутрь
-scan area, должны пропускаться.
-
-`Clean projects.json` удаляет из реестра только записи с отсутствующим
-`source_path` и дубликаты. Операция находится в Support, пишет отчёт в Storage/
-terminal и никогда не удаляет Source, Hub Data, Docs или другие проектные
-папки.
-
-## 3. MIRROR Engine
-
-Базовый модуль:
-
-```text
-system_core/core/projection_engine.py
-```
-
-Основной алгоритм:
-
-```text
-scan source by profile
-scan target by profile
-compare relative paths
-copy/update/touch first
-delete projection-only stale files only after clean copy phase
-sync directory shape
-ensure .gitkeep in empty incoming dirs
-```
-
-Правила:
-
-- Source не изменяется MIRROR-движком.
-- Projection может удалять stale-файлы.
-- `.git/**` защищён.
-- Реальный apply требует явного намерения.
-- Filtered profile должен иметь непустой include/allowlist.
-
-## 4. Projection Profiles
-
-Профили живут в:
-
-```text
-config/projection_profiles.json
-```
-
-Dev-Git профиль должен включать:
-
-- исходники;
-- Markdown/text документацию;
-- lock-файлы и reproducibility manifests;
-- CI/build descriptors;
-- formatter/linter configs;
-- полезные shared `.vscode/tasks.json`, `launch.json`, `extensions.json`.
-
-Профиль должен исключать:
-
-- runtime payload;
-- build/dist/out/target;
-- caches;
-- logs;
-- binaries/media/archives;
-- `.env`, private keys, tokens;
-- machine-local overrides вроде `*.local.json`.
-
-## 5. UI Layout
-
-Основная раскладка:
-
-```text
-Control | Structure | Work Area
-Bottom: Terminal Dock / Command Input / Command Cache
-```
+## Проверки
 
-Правые вкладки Work Area расположены двумя смысловыми рядами:
+| Что | Как |
+|---|---|
+| движок, консольная команда, канон | `runtime\python.exe -m pytest -q tests` — 172 теста; канон — на свежей копии лаборатории |
+| окно | `install\Build-App.cmd` — самопроверка собранного окна |
+| выпуск | `install\verify_portable_env.cmd` — окружение (`system_core\doctor.py`), консольная команда, `Start.exe`, окно по его отчёту |
 
-```text
-Quick  | Branch | Editor | Diff    | Storage
-Remote | Basket | Reader | History | Details
-```
+## Сборщик
 
-Каждый заголовок правой вкладки начинается с Material-иконки. Command buttons
-и заголовки правых вкладок имеют tooltips с задержкой появления 1200 ms и
-hide/fade 80 ms.
+`builder_main.cmd` — меню на FZF:
 
-Панели не должны быть свалены в один инспектор. Каждая отвечает за свою рабочую
-роль.
+| Шаг | Что |
+|---|---|
+| 01, 02 | окружение Python: `runtime\` и `wheelhouse\` из `install\requirements_full.in` (CMD или PowerShell) |
+| 03 | `system_core\fzf.exe` |
+| 05 | пакет BLAKE3 |
+| 06 | папки программы |
+| 07 | lock-файл зависимостей |
+| 09 | установка без сети из `runtime\` и `wheelhouse\` |
+| 70 | чистка кэша установки и того, что оставляет сборка окна |
+| 71 | проверка выпуска |
+| 72 | кодировка `.cmd`: UTF-8 без BOM, CRLF |
+| 95–98 | открыть `install\`, `runtime\`, `wheelhouse\`, `licenses\` |
 
-Левая панель делится на:
+Окно собирается отдельно: `install\Build-App.cmd`. `cleanup_project.cmd` возвращает проект к исходникам: убирает
+рантайм, кэши, журналы, состояние окна и то, что оставляет сборка; `App\` и `Start.exe` остаются.
 
-- `Open` — открытие текущего Project/Source, Mirror, Docs Folder, VS Code,
-  Terminal и Git. `Terminal` открывает внешний терминал в активном Source.
-  `Git` открывает внешний терминал в текущем Git-root и сразу выполняет
-  `git status --short`; он не должен дублировать `Open Project`.
-- `MIRROR` — параметры и команды текущего проекта.
-- `SOURCE ACTIONS` — операции над всем реестром/Source-контейнером:
-  rebuild dropdown, Clone Source, batch preview MIRROR, batch safety, batch
-  verify, batch Git status, combined workspace.
-- `PROJECT ACTIONS` — операции над текущим выбранным объектом дерева:
-  refresh tree, load to Editor, open in VS Code, copy relative/full path.
-- `Support` — диагностика и обслуживание: Auth Doctor, BLAKE3, Verify Mirror,
-  Storage, Safety Scan, Clean projects.json.
+## Документы
 
-`SOURCE`-бейдж под `SOURCE ACTIONS` обновляется после `Batch Git status` и
-показывает summary всего реестра: projects / clean / dirty / errors.
-
-Панель `Структура` — это поверхность дерева. В ней три переключателя слоя:
-
-```text
-PROJECT  -> project.source_path
-GIT COPY -> project.projection_path
-DOCS     -> project.docs_path
-```
-
-Выбранный слой и разрешённый путь показываются компактным badge в header.
-Иконки папок обновляют расположение выбранного слоя, а clear удаляет overrides.
-Относительные пути в `config/projects.json` считаются от корня Hub Manager;
-абсолютные пути остаются допустимыми для внешнего хранилища.
-
-## 6. Core Панели
-
-`Quick` — частые локальные Git/file команды в компактной сетке Material-иконок.
-Command cache не подставляет autocomplete в поле: выбор cached/pinned команды
-копирует текст в ручной command textarea, а Run выполняет именно этот текст.
-
-Первый блок `Quick` — `GIT LOCAL`: `init`, `status`, `root`,
-`log --oneline`, `reflog`. `user config` находится в Auth-блоке внутри
-`Remote`, `config list` — в Git backup/maintenance, Graph-история остаётся во
-вкладке `History`, чтобы локальный блок был компактной диагностикой.
-
-Git-покрытие намеренно широкое, но не opaque. UI закрывает обычный lifecycle
-разработчика от `git init` и clone до inspect, staging, commits, tags, remotes,
-branch switching/creation, stash, integration, history/graph, recovery helpers
-и maintenance. Branch switching, integration, stash и branch-danger templates
-сгруппированы в `Branch`, а не дублируются в `Quick`. Опасные или редкие
-сценарии остаются queued command templates, чтобы оператор видел и редактировал
-точную команду перед запуском.
-
-`Basket` — отдельное окно подготовки commit/checkpoint с длинными полями.
-
-`Branch` — branch status, `branch -vv`, `switch`, `switch -c`, tags, compare
-branches, `merge --no-ff`, `revert`, `cherry-pick`, stash и abort/rebase
-templates.
-
-`Remote` — настройка remotes, push/pull/fetch и Auth tools. В ней находятся:
-
-- remote form: platform, remote name, login/group, repository, full URL;
-- recent-value selects для remote fields, которые применяются только явными use
-  buttons;
-- `push origin`, `pull --ff-only`, `fetch --all --prune`, `remote -v`;
-- `push all remotes`, `apply remotes.json`, `origin push URLs`;
-- `Auth Doctor`, GitHub/GitLab SSH probes, `gh auth login`, `glab auth login`,
-  Windows Credentials, GitKraken folder и VS Code.
-
-Push-команды по умолчанию используют `--follow-tags`, чтобы annotated
-checkpoint tags публиковались вместе с веткой. `push all remotes` реализован в
-Python через имена Git remotes, а не через PowerShell-only shell loop.
-
-`Editor` — Markdown/text редактор для `.md`, `.markdown`, `.txt`, `.rst`;
-icon-only toolbar для load/save/paste/copy/clear/VS Code/expand, CodeMirror
-при наличии, textarea fallback при сбое JS-редактора.
-
-`Diff` — RedLine-style вывод selected/HEAD изменений.
-
-`History` — история выбранного файла/репозитория.
-
-`Details` — stats, JSON и raw payload выбранного объекта.
-
-`BLAKE3` — backend probe для реального BLAKE3 vs SHA-256 fallback.
-
-`Verify Mirror` — read-only Source ↔ Hub Data manifest verification. Манифесты
-строятся в памяти, результат пишется в `logs/<project_id>/`.
-
-`Storage` — configured roots для Manager, Hub Data и Docs, layout checks,
-machine-local picker/test/save для `Code.exe`, Safety Scan summary и raw JSON.
-
-`Scan projects` — support action для импорта множества проектов из общей
-родительской папки в `projects.json`. Результат отображается в Storage/terminal
-как JSON-отчёт.
-
-`Clean projects.json` — support action для удаления missing Source entries и
-дубликатов из реестра. Результат отображается в Storage/terminal как JSON-
-отчёт.
-
-## 7. Terminal Dock
-
-Terminal dock должен показывать:
-
-- exact command;
-- cwd;
-- stdout;
-- stderr;
-- exit code.
-
-Вывод декодируется через UTF-8/OEM/Cyrillic fallbacks и отображается как
-HTML/ANSI, чтобы Windows Git и русские пути не превращались в mojibake.
-
-## 8. Git Engine
-
-Базовый модуль:
-
-```text
-system_core/core/git_engine.py
-```
-
-Используется реальный `git` через `subprocess`. Стабильные данные читаются из
-porcelain-форматов, raw output остаётся видимым в terminal dock.
-
-Hub Manager-created commits должны stage только те пути, которые допустил бы
-активный Hub projection profile, плюс marker-файлы вроде `.gitkeep`.
-
-Обычная модель:
-
-```text
-Source/.git
-Hub Data/<project>/.git
-```
-
-Sidecar Git directories не используются: они ухудшают прозрачность владения
-после переносов и восстановления.
-
-## 9. Auth Policy
-
-Hub Manager не хранит GitHub/GitLab tokens, passwords или private keys.
-
-Аутентификация делегируется:
-
-- SSH keys + ssh-agent;
-- Git Credential Manager;
-- GitHub CLI;
-- GitLab CLI;
-- VS Code / GitKraken для setup и conflict work.
-
-Auth Doctor должен запускать non-interactive probes и не зависать на password
-prompts.
-
-### 9.1. Forgejo / Gitea
-
-Self-hosted инстансы описываются в `config/forgejo_hosts.json` (адрес, SSH
-user/port, предпочитаемый вид URL, кэш логина). Секретов файл не содержит.
-
-Модули:
-
-```text
-system_core/core/forgejo_api.py       API v1: version, user, repos, create
-system_core/core/git_credentials.py   git credential fill/approve/reject
-system_core/core/forgejo_service.py   вход, репозитории, отчёт для Auth Doctor
-```
-
-Контракт учётной записи — personal access token с заголовком
-`Authorization: token <TOKEN>`. Токен проверяется запросом `/api/v1/user` и
-только затем передаётся внешнему credential helper; в `config/*.json` он не
-записывается. OAuth2/OIDC-вход сознательно не используется: в Forgejo OAuth2
-scopes ещё не реализованы, такой токен даёт административные права на учётную
-запись, короткоживущий и требует отдельного механизма для `git push`.
-Обоснование — `docs/GIT_AUTH_STRATEGY.md`.
-
-Все probes остаются non-interactive: `GIT_TERMINAL_PROMPT=0`, отсутствие
-сохранённой записи трактуется как «токена нет», а не как ошибка.
-
-## 10. Storage Policy
-
-Рекомендуемые слои:
-
-```text
-Audion_Hub_Manager  independent app/codebase
-Audion_Hub_Data     Git-backed technical projections
-Audion_Docs         neutral Markdown/text docs folder
-Full Projects       source-of-truth projects
-```
-
-Docs может быть Obsidian, LogSeq, VS Code папкой, Syncthing/cloud folder или
-просто каталогом. Hub Data от этого не зависит.
-
-## 11. Testing
-
-Базовые проверки:
-
-```cmd
-python -m compileall -q system_core
-python -m pytest -q tests
-python system_core\ui_nicegui\app.py --smoke
-```
-
-Тесты должны покрывать:
-
-- profile parsing;
-- include/exclude scan;
-- MIRROR deletion;
-- same-size strict hash compare;
-- Source ↔ Hub Data BLAKE3 mirror verification;
-- `.gitkeep` creation/removal;
-- git status parser;
-- terminal decoding;
-- safety scan.
-
-## 12. Documentation Artifacts
-
-Markdown — источник истины.
-
-PDF и PPTX — release/presentation artifacts. Они не должны автоматически
-переписывать исходную документацию и не должны попадать в Hub commit pathset,
-если активный профиль их не допускает.
-
-Docs/Obsidian/LogSeq/VS Code docs folders не являются целью BLAKE3 mirror
-verification. Verify Mirror проверяет Source ↔ Hub Data; Docs остаётся
-читающим производным слоем, а не отдельной канонической копией.
+Markdown — источник. Таблицы канона в документах пишет `hub_cli canon --docs`, руками их не правят. Слой DOCS не
+сверяется по BLAKE3: его техническая копия уже в GIT-КОПИИ.

@@ -43,7 +43,6 @@ def test_vscode_command_prefers_local_override(tmp_path: Path, monkeypatch) -> N
 
     monkeypatch.setattr(external_apps, "get_project_paths", lambda: SimpleNamespace(config=config))
 
-    assert external_apps.configured_vscode_command() == str(local_code)
     assert external_apps._vscode_command() == str(local_code)
 
 
@@ -60,5 +59,4 @@ def test_vscode_command_accepts_quoted_path(tmp_path: Path, monkeypatch) -> None
 
     monkeypatch.setattr(external_apps, "get_project_paths", lambda: SimpleNamespace(config=config))
 
-    assert external_apps.configured_vscode_command() == str(code)
     assert external_apps._vscode_command() == str(code)

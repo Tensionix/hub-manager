@@ -1,20 +1,15 @@
-# Audion Hub Manager core
-blake3
-pytest
-
-# GUI layer
-nicegui
-pywebview
-pyyaml
-rich
-tqdm
-
-# Build bootstrap
+# Portable baseline: the builder and the lock of the requirements
+pip-tools
 setuptools
 wheel
 packaging
 
-# Test and audit layer
-# NiceGUI's headless `user` fixture parses the rendered page with BeautifulSoup;
-# the Screen fixture would need selenium and is deliberately not used.
-beautifulsoup4
+# What the engine imports (2.0.0): BLAKE3 for the check of a mirror, httpx for the API of Forgejo, PyYAML for a
+# layout written in YAML. The window on NiceGUI and the packages it lived on - nicegui, pywebview, rich, tqdm,
+# beautifulsoup4 - are gone with it.
+blake3
+httpx
+PyYAML
+
+# Test layer
+pytest

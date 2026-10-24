@@ -181,7 +181,6 @@ install/downloads/
 logs/
 output/
 report/
-release/
 work/
 workspace/
 input/
@@ -191,11 +190,8 @@ licenses/
 # No marker needed: these are never expected to exist in a fresh clone.
 node_modules/
 ._runtime/
-_pwsh_tmp/
-system_core/powershell/
 temp/
 tmp/
-backup/
 release_manifest.json
 _archives_public_git/
 _archives_private_git/
@@ -214,7 +210,42 @@ config/rclone/
 !.env.sample
 *.local.json
 *credential*
+# Code, not a credential: the module talks to the credential helper of git and holds nothing itself;
+# the pattern above kept it and its test out of the repository.
+!system_core/core/git_credentials.py
+!tests/test_git_credentials.py
 
 # Generated documents: rebuilt by Audion Build PDF Render, shipped in archives.
 Docs/PDF/
 docs/PDF/
+
+# The Git lab: built by system_core/core/lab.py (hub_cli lab create), repositories inside a repository.
+examples/lab/
+
+# --- the window on Avalonia (Source) ---
+# Its markup, its project file and the fonts it carries are its source; what a build leaves
+# and the built program are not.
+!Source/**/*.axaml
+!Source/*.csproj
+# The PowerShell the program carries (App\AudionPs.exe) is a project of its own.
+!Source/Ps/*.csproj
+!Source/app.manifest
+!Source/Assets/**
+# Start.exe is built from these: the program's icon with its sources, the manifest of the launcher.
+!system_core/icons/*
+!system_core/start_launcher/*.manifest
+Source/bin/
+Source/obj/
+Source/Ps/bin/
+Source/Ps/obj/
+/App/
+# The state of the window: its look and the history of its command line - the owner's, not the program's.
+/config/window_settings.json
+/config/terminal_commands.json
+# The registry of projects is this machine's: hub_projects.json in the root of the projects (here when the program folder
+# is the root), config/projects.json where it was kept before; a fresh program starts it from config/projects.example.json.
+/hub_projects.json
+/config/projects.json
+/config/forgejo_hosts.json
+# Source\Tools - the makers of the window's signs and the checks of its dictionary - is source, not a downloaded tool.
+!Source/Tools/

@@ -20,7 +20,6 @@ def test_load_hosts_payload_survives_a_broken_file(tmp_path: Path) -> None:
 
     assert payload["hosts"] == []
     assert forgejo_service.load_hosts(tmp_path) == []
-    assert forgejo_service.active_host(tmp_path) is None
 
 
 def test_load_hosts_payload_normalises_a_wrong_shape(tmp_path: Path) -> None:
@@ -59,33 +58,3 @@ def test_remember_host_updates_an_existing_record_without_duplicating_it(tmp_pat
     assert hosts[0]["ssh_port"] == 2222
 
 
-def test_active_host_prefers_the_active_id_then_an_enabled_record(tmp_path: Path) -> None:
-    write_config(
-        tmp_path,
-        """
-        {
-          "active_host_id": "second",
-          "hosts": [
-            {"id": "first", "url": "https://one.example.org", "enabled": false},
-            {"id": "second", "url": "https://two.example.org"}
-          ]
-        }
-        """,
-    )
-    assert forgejo_service.active_host(tmp_path).id == "second"
-    assert forgejo_service.active_host(tmp_path, "first").id == "first"
-
-    write_config(
-        tmp_path,
-        """
-        {
-          "active_host_id": "gone",
-          "hosts": [
-            {"id": "first", "url": "https://one.example.org", "enabled": false},
-            {"id": "second", "url": "https://two.example.org"}
-          ]
-        }
-        """,
-    )
-    # An unknown active id falls back to the first enabled host, not the first row.
-    assert forgejo_service.active_host(tmp_path).id == "second"
